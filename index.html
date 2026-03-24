@@ -478,6 +478,184 @@ function RPSGame({pet,onEnd}){
   </div>);
 }
 
+/* ═══ 올라올라 (Zigzag Climb) ═══ */
+function ZigzagGame({pet,onEnd}){
+  const W=9,CELL=18;
+  const[px,setPx]=useState(4);
+  const[dir,setDir]=useState(1);
+  const[row,setRow]=useState(0);
+  const[act,setAct]=useState(true);
+  const[ready,setReady]=useState(3);// countdown
+  const state=useRef({px:4,dir:1,row:0,act:true,walls:[]});
+
+  // Generate walls
+  useEffect(()=>{
+    const w=[];for(let i=0;i<200;i++){
+      const safe=i<3;// first 3 rows no walls
+      const side=Math.random()>.5?'L':'R';
+      const len=safe?0:1+Math.floor(Math.random()*(i>40?3:i>20?2:1));
+      w.push({side,len});
+    }
+    state.current.walls=w;
+  },[]);
+
+  // Countdown
+  useEffect(()=>{
+    if(ready<=0)return;
+    const t=setTimeout(()=>setReady(r=>r-1),800);
+    return()=>clearTimeout(t);
+  },[ready]);
+
+  // Game loop with setTimeout chain for dynamic speed
+  useEffect(()=>{
+    if(!act||ready>0)return;
+    let tid;
+    const step=()=>{
+      const s=state.current;
+      if(!s.act)return;
+      const np=s.px+s.dir;
+      const wall=s.walls[s.row+1]||{side:'L',len:0};
+      let blocked=np<0||np>=W;
+      if(!blocked&&wall.side==='L'){for(let i=0;i<wall.len;i++)if(np===i)blocked=true}
+      if(!blocked&&wall.side==='R'){for(let i=0;i<wall.len;i++)if(np===W-1-i)blocked=true}
+      if(blocked){
+        s.act=false;setAct(false);SFX.gameOver();
+      }else{
+        s.px=np;s.row++;
+        setPx(np);setRow(s.row);
+        if(s.row%5===0)SFX.starCatch();
+        const spd=Math.max(120,350-s.row*3);
+        tid=setTimeout(step,spd);
+      }
+    };
+    tid=setTimeout(step,400);
+    return()=>clearTimeout(tid);
+  },[act,ready]);
+
+  const flip=()=>{if(state.current.act&&ready<=0){SFX.click();state.current.dir*=-1;setDir(d=>d*-1)}};
+
+  if(!act){
+    const sc=state.current.row;const coins=Math.min(50,Math.floor(sc/2));
+    return(<div style={{textAlign:"center",padding:16}}>
+      <div style={{fontSize:14,fontWeight:900,color:"#2b1d34",marginBottom:6}}>게임 종료!</div>
+      <div style={{fontSize:20,fontWeight:900,color:"#b59af8",marginBottom:4}}>{sc}층</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:3,marginBottom:14}}><PxI n="coin" size={14}/><span style={{fontSize:12,color:"#888"}}>+{coins}</span></div>
+      <button className="btn btn-m" onClick={()=>onEnd(coins)}>확인</button>
+    </div>);
+  }
+  const H=14;const walls=state.current.walls;
+  return(<div style={{textAlign:"center"}}>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,padding:"0 4px"}}>
+      <span style={{fontSize:10,fontWeight:700,color:"#888"}}>{row}층</span>
+      <span style={{fontSize:10,fontWeight:700,color:"#b59af8"}}>올라올라!</span>
+    </div>
+    <div style={{position:"relative",width:W*CELL,height:H*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a",cursor:"pointer"}} onClick={flip}>
+      {ready>0&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,background:"rgba(0,0,0,.5)"}}>
+        <span style={{fontSize:28,fontWeight:900,color:"#ffd166",animation:"popIn .4s ease"}}>{ready}</span>
+      </div>}
+      {/* Walls */}
+      {Array.from({length:H}).map((_,vi)=>{
+        const ri=Math.max(0,row-2)+vi;
+        const w=walls[ri]||{side:'L',len:0};
+        return Array.from({length:w.len}).map((_,j)=>{
+          const wx=w.side==='L'?j:W-1-j;
+          return <div key={vi+'-'+j} style={{position:"absolute",left:wx*CELL,top:(H-1-vi)*CELL,width:CELL,height:CELL,background:"linear-gradient(135deg,#ff4d6d,#d45c7f)",borderRadius:2}}/>;
+        });
+      })}
+      <div style={{position:"absolute",left:px*CELL+(CELL-16)/2,top:(H-3)*CELL,zIndex:2}}>
+        <PxChar ch={pet} size={16}/>
+      </div>
+      {/* Direction arrow */}
+      <div style={{position:"absolute",left:px*CELL+(CELL-16)/2+(dir>0?18:-12),top:(H-3)*CELL+4,fontSize:10,color:"#ffd166",fontWeight:900,zIndex:3}}>{dir>0?"→":"←"}</div>
+    </div>
+    <div style={{marginTop:6,fontSize:9,color:"#aaa"}}>탭해서 방향 전환!</div>
+  </div>);
+}
+
+/* ═══ 받아받아 (Catch & Dodge) ═══ */
+function CatchGame({pet,onEnd}){
+  const W=7,H=10,CELL=22;
+  const[pos,setPos]=useState(3);
+  const[items,setItems]=useState([]);
+  const[score,setScore]=useState(0);
+  const[lives,setLives]=useState(3);
+  const[time,setTime]=useState(25);
+  const[act,setAct]=useState(true);
+  const scoreRef=useRef(0);
+  const livesRef=useRef(3);
+  const posRef=useRef(3);
+  posRef.current=pos;
+
+  // Timer
+  useEffect(()=>{
+    const iv=setInterval(()=>setTime(t=>{if(t<=1){setAct(false);clearInterval(iv);return 0}return t-1}),1000);
+    return()=>clearInterval(iv);
+  },[]);
+  useEffect(()=>{if(!act)SFX.gameOver()},[act]);
+
+  // Spawn + move items (slower, interval-based)
+  useEffect(()=>{
+    if(!act)return;
+    let tick=0;
+    const iv=setInterval(()=>{
+      tick++;
+      // Spawn every 6 ticks (~900ms)
+      if(tick%6===0){
+        const isBomb=Math.random()<0.25;
+        setItems(p=>[...p,{x:Math.floor(Math.random()*W),y:0,bomb:isBomb,id:Date.now()+Math.random()}]);
+      }
+      // Move down every 3 ticks (~450ms)
+      if(tick%3===0){
+        setItems(p=>{
+          let caught=0,bombed=0;
+          const next=[];
+          for(const i of p){
+            const ny=i.y+1;
+            if(ny>=H-1&&i.x===posRef.current){
+              if(i.bomb)bombed++;else caught++;
+            }else if(ny>=H){
+              // missed
+            }else{
+              next.push({...i,y:ny});
+            }
+          }
+          if(caught>0){scoreRef.current+=caught;setScore(scoreRef.current);SFX.starCatch()}
+          if(bombed>0){livesRef.current-=bombed;setLives(livesRef.current);SFX.rpsLose();if(livesRef.current<=0)setAct(false)}
+          return next;
+        });
+      }
+    },150);
+    return()=>clearInterval(iv);
+  },[act]);
+
+  if(!act){
+    const coins=scoreRef.current*4;
+    return(<div style={{textAlign:"center",padding:16}}>
+      <div style={{fontSize:14,fontWeight:900,color:"#2b1d34",marginBottom:6}}>게임 종료!</div>
+      <div style={{fontSize:20,fontWeight:900,color:"#7ed4a8",marginBottom:4}}>{scoreRef.current}개</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:3,marginBottom:14}}><PxI n="coin" size={14}/><span style={{fontSize:12,color:"#888"}}>+{coins}</span></div>
+      <button className="btn btn-m" onClick={()=>onEnd(coins)}>확인</button>
+    </div>);
+  }
+  return(<div style={{textAlign:"center"}}>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,padding:"0 4px"}}>
+      <span style={{display:"flex",alignItems:"center",gap:2,fontSize:10,fontWeight:700,color:"#888"}}><PxI n="coin" size={12}/>{score}</span>
+      <span style={{fontSize:10,fontWeight:700,color:"#888"}}>{"♥".repeat(livesRef.current)}{"♡".repeat(3-livesRef.current)}</span>
+      <span style={{fontSize:10,fontWeight:700,color:time<=5?"#ff4d6d":"#888"}}>⏱{time}s</span>
+    </div>
+    <div style={{position:"relative",width:W*CELL,height:H*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a"}}>
+      {items.map(i=><div key={i.id} style={{position:"absolute",left:i.x*CELL+3,top:i.y*CELL,fontSize:14}}>
+        {i.bomb?<span>💣</span>:<PxI n="coin" size={16}/>}
+      </div>)}
+      <div style={{position:"absolute",left:pos*CELL,bottom:0,width:CELL,height:24,display:"flex",alignItems:"flex-end",justifyContent:"center"}}><PxChar ch={pet} size={20}/></div>
+    </div>
+    <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.max(0,p-1))} style={{padding:"7px 18px"}}>◀</button>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.min(W-1,p+1))} style={{padding:"7px 18px"}}>▶</button>
+    </div>
+  </div>);
+}
+
 /* ═══ ROOM DECORATION ITEMS (pixel art) ═══ */
 const RoomDeco=memo(function RoomDeco({type}){
   const src=useMemo(()=>mkI("deco_"+type,16,16,x=>{
@@ -1355,11 +1533,11 @@ function App(){
 
 
                 {screen===SC.GAMES&&!gt&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>미니게임</span></div>
-                  {[{t:"catch",n:"별 잡기",d:"떨어지는 별을 잡아요!",ic:"star",r:"별당 5코인"},{t:"memory",n:"카드 매칭",d:"같은 그림 짝을 맞춰요!",ic:"cards",r:"최대 30코인"},{t:"rps",n:"가위바위보",d:"5판 승부!",ic:"rps",r:"승리당 8코인"}].map(g=><div key={g.t} className="item" onClick={()=>{setGt(g.t);setScreen(SC.GP)}} style={{marginBottom:3}}><PxI n={g.ic} size={28}/><div style={{flex:1}}><div style={{fontSize:11,fontWeight:800,color:"#2b1d34"}}>{g.n}</div><div style={{fontSize:8,color:"#aaa"}}>{g.d}</div></div><span style={{fontSize:7,fontWeight:700,color:"#7ed4a8"}}>{g.r}</span></div>)}
+                  {[{t:"catch",n:"별 잡기",d:"떨어지는 별을 잡아요!",ic:"star",r:"별당 5코인"},{t:"memory",n:"카드 매칭",d:"같은 그림 짝을 맞춰요!",ic:"cards",r:"최대 30코인"},{t:"rps",n:"가위바위보",d:"5판 승부!",ic:"rps",r:"승리당 8코인"},{t:"zigzag",n:"올라올라",d:"벽을 피해 올라가자!",ic:"home",r:"2층당 1코인"},{t:"dodge",n:"받아받아",d:"코인은 받고 폭탄은 피해!",ic:"coin",r:"코인당 4코인"}].map(g=><div key={g.t} className="item" onClick={()=>{setGt(g.t);setScreen(SC.GP)}} style={{marginBottom:3}}><PxI n={g.ic} size={28}/><div style={{flex:1}}><div style={{fontSize:11,fontWeight:800,color:"#2b1d34"}}>{g.n}</div><div style={{fontSize:8,color:"#aaa"}}>{g.d}</div></div><span style={{fontSize:7,fontWeight:700,color:"#7ed4a8"}}>{g.r}</span></div>)}
                 </div>}
 
-                {screen===SC.GP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.GAMES}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>{gt==="catch"?"별 잡기":gt==="memory"?"카드 매칭":"가위바위보"}</span></div>
-                  {gt==="catch"&&<StarGame pet={pet} onEnd={onGE}/>}{gt==="memory"&&<MemGame onEnd={onGE}/>}{gt==="rps"&&<RPSGame pet={pet} onEnd={onGE}/>}
+                {screen===SC.GP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.GAMES}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>{gt==="catch"?"별 잡기":gt==="memory"?"카드 매칭":gt==="rps"?"가위바위보":gt==="zigzag"?"올라올라":"받아받아"}</span></div>
+                  {gt==="catch"&&<StarGame pet={pet} onEnd={onGE}/>}{gt==="memory"&&<MemGame onEnd={onGE}/>}{gt==="rps"&&<RPSGame pet={pet} onEnd={onGE}/>}{gt==="zigzag"&&<ZigzagGame pet={pet} onEnd={onGE}/>}{gt==="dodge"&&<CatchGame pet={pet} onEnd={onGE}/>}
                 </div>}
 
                 {screen===SC.SHOP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>상점</span><div style={{flex:1}}/><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="coin" size={12}/><span style={{fontSize:10,fontWeight:700,color:"#d4a030"}}>{coins}</span></div></div>
