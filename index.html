@@ -28,8 +28,7 @@ body{min-height:100vh;min-height:100dvh;background:linear-gradient(170deg,#1a102
 @keyframes zzz{0%{opacity:0;transform:translateY(0) scale(.6)}50%{opacity:1}100%{opacity:0;transform:translateY(-14px) scale(1)}}
 @keyframes heartPop{0%{opacity:0;transform:scale(0)}40%{opacity:1;transform:scale(1.2)}60%{transform:scale(.9)}100%{opacity:0;transform:translateY(-12px) scale(.5)}}
 @keyframes noteFloat{0%{opacity:0;transform:translateY(0) rotate(-10deg)}30%{opacity:1}100%{opacity:0;transform:translateY(-16px) rotate(15deg)}}
-@keyframes dropFall{0%{transform:translateY(0) scale(1)}60%{transform:translateY(var(--drop-dist,100px)) scale(1)}75%{transform:translateY(var(--drop-dist,100px)) scale(1.15,.85)}100%{transform:translateY(var(--drop-dist,100px)) scale(.6) ;opacity:0}}
-@keyframes catchHeart{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-20px) scale(.4)}}
+@keyframes bubble{0%{opacity:0;transform:translateY(0) scale(.5)}30%{opacity:.8}100%{opacity:0;transform:translateY(-40px) scale(1)}}
 .device{position:relative;width:100%;max-width:380px;margin:0 auto;padding:0 2px}
 .device-body{background:linear-gradient(180deg,#f0c8e0 0%,#e8b0d0 30%,#d898c0 100%);border-radius:32px 32px 40px 40px;padding:12px 10px 14px;box-shadow:0 10px 40px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.25),inset 0 -2px 0 rgba(0,0,0,.08);border:2px solid #c888b0;position:relative}
 .device-ring{width:26px;height:14px;border:3px solid #c0a0b0;border-bottom:none;border-radius:13px 13px 0 0;margin:0 auto -2px}
@@ -517,7 +516,7 @@ const RoomDeco=memo(function RoomDeco({type}){
 });
 
 /* ═══ HOME SCREEN - Living Room with walking pet ═══ */
-function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petStage,onPetTouch,onRoomTouch,onDrop,runawayWarn,poop,dirty,sleeping,onClean,onBath,onSleep}){
+function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petStage,onPetTouch,onRoomTouch,runawayWarn,poop,dirty,sleeping,onClean,onBath,onSleep}){
   const[posX,setPosX]=useState(50);
   const[dir,setDir]=useState(1);
   const[action,setAction]=useState("walk"); // walk, idle, sleep, jump, spin, sit
@@ -525,8 +524,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
   const actionTimer=useRef(null);
   const walkTimer=useRef(null);
   const roomRef=useRef(null);
-  const[dragItem,setDragItem]=useState(null); // {x,y,type}
-  const[drops,setDrops]=useState([]); // [{id,xPct,type,dist}]
+  const[bathing,setBathing]=useState(false);
 
   // Walking behavior
   useEffect(()=>{
@@ -569,42 +567,13 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
     return()=>clearInterval(actionTimer.current);
   },[hunger,happy,sick]);
 
-  // Drag & drop treats
-  const TREAT_TYPES=['star','happy','coin'];
-  const handlePointerDown=useCallback((e)=>{
-    if(sick)return;
-    const rect=roomRef.current?.getBoundingClientRect();if(!rect)return;
-    const x=((e.clientX||e.touches?.[0]?.clientX)-rect.left);
-    const y=((e.clientY||e.touches?.[0]?.clientY)-rect.top);
-    const type=TREAT_TYPES[Math.floor(Math.random()*TREAT_TYPES.length)];
-    setDragItem({x,y,type});
-    e.preventDefault();e.stopPropagation();
-  },[sick]);
-  const handlePointerMove=useCallback((e)=>{
-    if(!dragItem)return;
-    const rect=roomRef.current?.getBoundingClientRect();if(!rect)return;
-    const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
-    const y=(e.clientY||e.touches?.[0]?.clientY)-rect.top;
-    setDragItem(d=>d?{...d,x,y}:null);
-    e.preventDefault();
-  },[dragItem]);
-  const handlePointerUp=useCallback((e)=>{
-    if(!dragItem)return;
-    const rect=roomRef.current?.getBoundingClientRect();if(!rect)return;
-    const xPct=Math.max(5,Math.min(95,dragItem.x/rect.width*100));
-    const dist=rect.height-dragItem.y;
-    const id=Date.now();
-    setDrops(d=>[...d,{id,xPct,type:dragItem.type,dist:Math.max(20,dist)}]);
-    setDragItem(null);
-    // Pet runs to catch it
-    setTimeout(()=>{
-      setPosX(xPct);setDir(xPct>posX?1:-1);
-      setAction("jump");setEmote("heart");
-      if(onDrop)onDrop();
-      setTimeout(()=>{setEmote(null);setAction("walk")},1000);
-    },600);
-    setTimeout(()=>setDrops(d=>d.filter(dd=>dd.id!==id)),900);
-  },[dragItem,posX,onDrop]);
+  // Bath animation handler
+  const doBath=useCallback(()=>{
+    if(onBath&&dirty>=2){
+      setBathing(true);onBath();
+      setTimeout(()=>setBathing(false),1500);
+    }
+  },[onBath,dirty]);
 
   // Pixel room background
   const roomBg=useMemo(()=>mkI("room",80,50,(x)=>{
@@ -640,7 +609,10 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
   }),[]);
 
   const getCharStyle=()=>{
+    const sz=petStage===0?48:petStage===1?64:80;
     const base={position:"absolute",bottom:14,left:`${posX}%`,transform:`translateX(-50%) scaleX(${dir})`,transition:"left .28s linear",imageRendering:"pixelated"};
+    if(bathing)return{...base,bottom:6,left:"50%",transform:"translateX(-50%) scaleY(.85)",transition:"all .3s",filter:"brightness(1.1)"};
+    if(sleeping)return{...base,bottom:4,left:"50%",transform:"translateX(-50%) scaleY(.5) scaleX(1.15)",transition:"all .5s",filter:"brightness(.85) saturate(.7)",opacity:.85};
     if(sick)return{...base,bottom:10,left:"50%",transform:"translateX(-50%)",transition:"left .5s",filter:"hue-rotate(-15deg) saturate(0.7)"};
     switch(action){
       case"jump":return{...base,animation:"petHop .4s ease infinite"};
@@ -670,18 +642,10 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
     </div>
 
     {/* Room */}
-    <div ref={roomRef} onClick={(e)=>{if(!dragItem&&onRoomTouch)onRoomTouch()}}
-      onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={()=>setDragItem(null)}
-      onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}
-      style={{position:"relative",width:"100%",height:"clamp(140px, 28dvh, 190px)",borderRadius:12,overflow:"hidden",background:"#f8f2ff",border:"2px solid rgba(0,0,0,.06)",cursor:"grab",touchAction:"none"}}>
+    <div ref={roomRef} onClick={(e)=>{if(onRoomTouch)onRoomTouch()}}
+      style={{position:"relative",width:"100%",height:"clamp(140px, 28dvh, 190px)",borderRadius:12,overflow:"hidden",background:"#f8f2ff",border:"2px solid rgba(0,0,0,.06)",cursor:"pointer"}}>
       {/* BG */}
       <img src={roomBg} style={{width:"100%",height:"100%",imageRendering:"pixelated",objectFit:"cover"}} draggable={false}/>
-
-      {/* Dragging item */}
-      {dragItem&&<div style={{position:"absolute",left:dragItem.x-12,top:dragItem.y-12,pointerEvents:"none",zIndex:10,transition:"none",filter:"drop-shadow(0 2px 4px rgba(0,0,0,.2))"}}><PxI n={dragItem.type} size={24}/></div>}
-
-      {/* Falling drops */}
-      {drops.map(d=><div key={d.id} style={{position:"absolute",left:`${d.xPct}%`,top:0,transform:"translateX(-50%)",pointerEvents:"none",zIndex:9,"--drop-dist":`${d.dist}px`,animation:`dropFall .8s ease-in forwards`}}><PxI n={d.type} size={20}/></div>)}
 
       {/* Room decorations from inventory */}
       {inv.includes("r")&&<div style={{position:"absolute",top:"18%",left:"72%",imageRendering:"pixelated"}}>
@@ -697,10 +661,10 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
         <RoomDeco type="heart_deco"/>
       </div>}
 
-      {/* Poop on floor */}
-      {poop>=1&&<div style={{position:"absolute",bottom:"8%",left:"20%",pointerEvents:"none"}}><PxI n="poop" size={14}/></div>}
-      {poop>=2&&<div style={{position:"absolute",bottom:"10%",left:"45%",pointerEvents:"none"}}><PxI n="poop" size={12}/></div>}
-      {poop>=3&&<div style={{position:"absolute",bottom:"6%",left:"70%",pointerEvents:"none"}}><PxI n="poop" size={14}/></div>}
+      {/* Poop on floor - tap to clean */}
+      {poop>=1&&<div onClick={(e)=>{e.stopPropagation();if(onClean)onClean()}} style={{position:"absolute",bottom:"8%",left:"20%",cursor:"pointer",zIndex:5,padding:4,animation:"idle 2s ease infinite"}}><PxI n="poop" size={16}/></div>}
+      {poop>=2&&<div onClick={(e)=>{e.stopPropagation();if(onClean)onClean()}} style={{position:"absolute",bottom:"12%",left:"48%",cursor:"pointer",zIndex:5,padding:4,animation:"idle 2.3s ease .3s infinite"}}><PxI n="poop" size={14}/></div>}
+      {poop>=3&&<div onClick={(e)=>{e.stopPropagation();if(onClean)onClean()}} style={{position:"absolute",bottom:"6%",left:"72%",cursor:"pointer",zIndex:5,padding:4,animation:"idle 1.8s ease .6s infinite"}}><PxI n="poop" size={16}/></div>}
 
       {/* Dirty overlay */}
       {dirty>=3&&<div style={{position:"absolute",inset:0,background:`rgba(139,105,20,${dirty*0.03})`,pointerEvents:"none",borderRadius:12}}/>}
@@ -726,10 +690,14 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
       {emote==="sad"&&<div style={{position:"absolute",bottom:100,left:`${posX}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
         <div style={{animation:"zzz 1.5s ease infinite"}}><PxI n="sweat" size={12}/></div>
       </div>}
-      {sleeping&&<div style={{position:"absolute",bottom:80,left:`${posX+8}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
+      {sleeping&&!bathing&&<div style={{position:"absolute",bottom:60,left:`${posX+8}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
         <div style={{animation:"zzz 2s ease infinite"}}><PxI n="sleep" size={16}/></div>
         <div style={{animation:"zzz 2.5s ease .8s infinite",marginLeft:12}}><PxI n="sleep" size={12}/></div>
       </div>}
+      {bathing&&<>
+        {[[-20,0],[0,.2],[20,.4],[10,.6],[-10,.8]].map(([dx,d],i)=><div key={i} style={{position:"absolute",bottom:20,left:`calc(50% + ${dx}px)`,pointerEvents:"none",animation:`bubble 1.2s ease ${d}s infinite`}}><PxI n="bath" size={10}/></div>)}
+        <div style={{position:"absolute",bottom:0,left:"30%",right:"30%",height:"30%",background:"linear-gradient(0deg,rgba(126,200,227,.25),transparent)",borderRadius:"50% 50% 0 0",pointerEvents:"none",animation:"pulse 1s ease infinite"}}/>
+      </>}
 
       {/* Hunger/Happy warnings */}
       {hunger<1.5&&<div style={{position:"absolute",top:8,right:8,animation:"idle 1s ease-in-out infinite"}}><PxI n="sweat" size={18}/></div>}
@@ -757,13 +725,11 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
     </div>}
 
     {/* Care action buttons */}
-    {!sick&&(poop>0||dirty>=2||true)&&<div style={{display:"flex",gap:4,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
-      {poop>0&&<button className="btn btn-s" onClick={onClean} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2}}>
-        <PxI n="clean" size={12}/>치우기 <span style={{fontSize:7,opacity:.5,background:"rgba(139,105,20,.2)",borderRadius:4,padding:"0 3px"}}>{poop}</span>
-      </button>}
-      {dirty>=2&&<button className="btn btn-s" onClick={onBath} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2}}>
+    {!sick&&<div style={{display:"flex",gap:4,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
+      {dirty>=2&&!bathing&&<button className="btn btn-s" onClick={doBath} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2}}>
         <PxI n="bath" size={12}/>목욕
       </button>}
+      {bathing&&<span style={{fontSize:9,fontWeight:700,color:"#7ec8e3",padding:"4px 10px"}}>목욕 중... 🫧</span>}
       <button className="btn btn-s" onClick={onSleep} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2,background:sleeping?"linear-gradient(135deg,#2a1848,#3a2868)":""}}>
         <PxI n="sleep" size={12}/>{sleeping?"깨우기":"재우기"}
       </button>
@@ -771,7 +737,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
 
     {/* Mood text */}
     <div style={{textAlign:"center",marginTop:3,fontSize:9,color:sick?"#ff4d6d":sleeping?"#b59af8":"#bbb"}}>
-      {sick?"아파하고 있어요... 약을 주세요!":sleeping?"쿨쿨... 자는 중이에요":poop>=3?"방이 더러워요! 치워주세요!":dirty>=4?"목욕이 필요해요!":hunger<2?"배고파하고 있어요...":happy<2?"심심해하고 있어요...":action==="jump"?"신나게 뛰고 있어요!":action==="spin"?"빙글빙글~!":action==="sit"?"앉아서 쉬고 있어요":"돌아다니는 중..."}
+      {sick?"아파하고 있어요... 약을 주세요!":bathing?"목욕 중~ 기분 좋다!":sleeping?"쿨쿨... 자는 중이에요":poop>=3?"💩을 터치해서 치워주세요!":poop>=1?"방에 똥이...! 터치해서 치워주세요":dirty>=4?"목욕이 필요해요!":hunger<2?"배고파하고 있어요...":happy<2?"심심해하고 있어요...":action==="jump"?"신나게 뛰고 있어요!":action==="spin"?"빙글빙글~!":action==="sit"?"앉아서 쉬고 있어요":"돌아다니는 중..."}
     </div>
   </div>);
 }
@@ -1087,8 +1053,8 @@ function App(){
   },[started,dead,runaway,poop,dirty]);
 
   const cleanPoop=useCallback(()=>{
-    if(poop<=0)return;SFX.clean();setPoop(0);setCareScore(c=>Math.min(100,c+2));
-    setFeedMsg("깨끗!");setTimeout(()=>setFeedMsg(null),1000);
+    if(poop<=0)return;SFX.clean();setPoop(p=>Math.max(0,p-1));setCareScore(c=>Math.min(100,c+2));
+    setFeedMsg(poop<=1?"깨끗!":"치웠다!");setTimeout(()=>setFeedMsg(null),800);
   },[poop]);
 
   const giveBath=useCallback(()=>{
@@ -1238,11 +1204,6 @@ function App(){
     lastTouchRef.current=now+2000;
   },[sick,dead,runaway]);
 
-  const handleDrop=useCallback(()=>{
-    if(sick||dead||runaway)return;
-    SFX.pet();setHappy(h=>Math.min(5,h+0.3));setCareScore(c=>Math.min(100,c+2));
-  },[sick,dead,runaway]);
-
   const Back=({to})=><button onClick={()=>{setScreen(to);if(to===SC.GAMES)setGt(null);if(to===SC.HOME){setDatePartner(null);setDateStage(0)}}} style={{background:"none",border:"none",cursor:"pointer",padding:"4px",fontSize:14,color:"#888"}}>‹</button>;
   const MenuBtn=({icon,label,to,idx})=>{
     const isActive=screen===to;
@@ -1317,7 +1278,7 @@ function App(){
               </div>}
 
               {started&&pet&&!dead&&!runaway&&<>
-                {screen===SC.HOME&&<HomeScreen pet={pet} hunger={hunger} happy={happy} feedMsg={feedMsg} userName={userName} inv={inv} sick={sick} onMedicine={giveMedicine} petStage={petStage} onPetTouch={handlePetTouch} onRoomTouch={handleRoomTouch} onDrop={handleDrop} runawayWarn={runawayWarn} poop={poop} dirty={dirty} sleeping={sleeping} onClean={cleanPoop} onBath={giveBath} onSleep={toggleSleep}/>}
+                {screen===SC.HOME&&<HomeScreen pet={pet} hunger={hunger} happy={happy} feedMsg={feedMsg} userName={userName} inv={inv} sick={sick} onMedicine={giveMedicine} petStage={petStage} onPetTouch={handlePetTouch} onRoomTouch={handleRoomTouch} runawayWarn={runawayWarn} poop={poop} dirty={dirty} sleeping={sleeping} onClean={cleanPoop} onBath={giveBath} onSleep={toggleSleep}/>}
 
                 {screen===SC.FEED&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>먹이기</span></div>
                   <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:7}}><PxChar ch={pet} size={46} idle/><div style={{display:"flex",flexDirection:"column",gap:2,justifyContent:"center"}}><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="hunger" size={11}/><StatBar val={hunger} max={5} color="#ff9a6c"/></div><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="happy" size={11}/><StatBar val={happy} max={5} color="#ff4d6d"/></div></div></div>
