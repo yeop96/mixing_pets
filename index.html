@@ -317,7 +317,8 @@ const defaultFridge=()=>({rice:1,curry:0,steak:0,cake:0,candy:0,icecream:0});
 const ACCS=[{id:"r",n:"리본",p:50,deco:"ribbon",desc:"벽에 거는 귀여운 리본"},{id:"g",n:"안경",p:80,deco:"glasses",desc:"선반에 올려두는 안경"},{id:"s",n:"별 배지",p:30,deco:"star_deco",desc:"벽에 빛나는 별 장식"},{id:"h",n:"하트 목걸이",p:100,deco:"heart_deco",desc:"벽에 거는 하트 오너먼트"}];
 
 /* ═══ MINI-GAMES (bugs fixed) ═══ */
-function StarGame({pet,onEnd}){
+const GS={transform:"scale(1.25)",transformOrigin:"top center",marginBottom:10};
+function StarGame({pet,onEnd,lRef,rRef,okRef}){
   const W=9,H=12;
   const[pos,setPos]=useState(4);
   const[stars,setStars]=useState([]);
@@ -348,7 +349,14 @@ function StarGame({pet,onEnd}){
     return()=>cancelAnimationFrame(raf);
   },[act]);
 
-  // Collision check in separate effect with pos only
+  // Register physical buttons
+  useEffect(()=>{
+    if(!act)return;
+    if(lRef)lRef.current=()=>setPos(p=>Math.max(0,p-1));
+    if(rRef)rRef.current=()=>setPos(p=>Math.min(W-1,p+1));
+    return()=>{if(lRef)lRef.current=null;if(rRef)rRef.current=null};
+  },[act]);
+
   const posRef=useRef(pos);
   posRef.current=pos;
   useEffect(()=>{
@@ -384,13 +392,15 @@ function StarGame({pet,onEnd}){
       <span style={{display:"flex",alignItems:"center",gap:2,fontSize:10,fontWeight:700,color:"#888"}}><PxI n="star" size={12}/>{score}</span>
       <span style={{fontSize:10,fontWeight:700,color:time<=5?"#ff4d6d":"#888"}}>⏱{time}s</span>
     </div>
+    <div style={GS}>
     <div style={{position:"relative",width:W*20,height:H*20,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a"}}>
       {stars.map(s=><div key={s.id} style={{position:"absolute",left:s.x*20+2,top:s.y*20}}><PxI n="star" size={16}/></div>)}
       <div style={{position:"absolute",left:pos*20,bottom:0,width:20,height:22,display:"flex",alignItems:"flex-end",justifyContent:"center"}}><PxChar ch={pet} size={18}/></div>
     </div>
-    <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
-      <button className="btn btn-s" onClick={()=>setPos(p=>Math.max(0,p-1))} style={{padding:"7px 18px"}}>◀</button>
-      <button className="btn btn-s" onClick={()=>setPos(p=>Math.min(W-1,p+1))} style={{padding:"7px 18px"}}>▶</button>
+    </div>
+    <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:2}}>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.max(0,p-1))} style={{padding:"6px 16px"}}>◀</button>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.min(W-1,p+1))} style={{padding:"6px 16px"}}>▶</button>
     </div>
   </div>);
 }
@@ -479,7 +489,7 @@ function RPSGame({pet,onEnd}){
 }
 
 /* ═══ 올라올라 (Zigzag Climb) ═══ */
-function ZigzagGame({pet,onEnd}){
+function ZigzagGame({pet,onEnd,okRef}){
   const W=9,CELL=18;
   const[px,setPx]=useState(4);
   const[dir,setDir]=useState(1);
@@ -534,6 +544,8 @@ function ZigzagGame({pet,onEnd}){
 
   const flip=()=>{if(state.current.act&&ready<=0){SFX.click();state.current.dir*=-1;setDir(d=>d*-1)}};
 
+  useEffect(()=>{if(!act)return;if(okRef)okRef.current=flip;return()=>{if(okRef)okRef.current=null}},[act]);
+
   if(!act){
     const sc=state.current.row;const coins=Math.min(50,Math.floor(sc/2));
     return(<div style={{textAlign:"center",padding:16}}>
@@ -549,7 +561,7 @@ function ZigzagGame({pet,onEnd}){
       <span style={{fontSize:10,fontWeight:700,color:"#888"}}>{row}층</span>
       <span style={{fontSize:10,fontWeight:700,color:"#b59af8"}}>올라올라!</span>
     </div>
-    <div style={{position:"relative",width:W*CELL,height:H*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a",cursor:"pointer"}} onClick={flip}>
+    <div style={GS}><div style={{position:"relative",width:W*CELL,height:H*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a",cursor:"pointer"}} onClick={flip}>
       {ready>0&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,background:"rgba(0,0,0,.5)"}}>
         <span style={{fontSize:28,fontWeight:900,color:"#ffd166",animation:"popIn .4s ease"}}>{ready}</span>
       </div>}
@@ -567,13 +579,13 @@ function ZigzagGame({pet,onEnd}){
       </div>
       {/* Direction arrow */}
       <div style={{position:"absolute",left:px*CELL+(CELL-16)/2+(dir>0?18:-12),top:(H-3)*CELL+4,fontSize:10,color:"#ffd166",fontWeight:900,zIndex:3}}>{dir>0?"→":"←"}</div>
-    </div>
-    <div style={{marginTop:6,fontSize:9,color:"#aaa"}}>탭해서 방향 전환!</div>
+    </div></div>
+    <div style={{marginTop:6,fontSize:9,color:"#aaa"}}>탭 또는 OK 버튼!</div>
   </div>);
 }
 
 /* ═══ 받아받아 (Catch & Dodge) ═══ */
-function CatchGame({pet,onEnd}){
+function CatchGame({pet,onEnd,lRef,rRef}){
   const W=7,H=10,CELL=22;
   const[pos,setPos]=useState(3);
   const[items,setItems]=useState([]);
@@ -585,6 +597,13 @@ function CatchGame({pet,onEnd}){
   const livesRef=useRef(3);
   const posRef=useRef(3);
   posRef.current=pos;
+
+  useEffect(()=>{
+    if(!act)return;
+    if(lRef)lRef.current=()=>setPos(p=>Math.max(0,p-1));
+    if(rRef)rRef.current=()=>setPos(p=>Math.min(W-1,p+1));
+    return()=>{if(lRef)lRef.current=null;if(rRef)rRef.current=null};
+  },[act]);
 
   // Timer
   useEffect(()=>{
@@ -643,21 +662,21 @@ function CatchGame({pet,onEnd}){
       <span style={{fontSize:10,fontWeight:700,color:"#888"}}>{"♥".repeat(livesRef.current)}{"♡".repeat(3-livesRef.current)}</span>
       <span style={{fontSize:10,fontWeight:700,color:time<=5?"#ff4d6d":"#888"}}>⏱{time}s</span>
     </div>
-    <div style={{position:"relative",width:W*CELL,height:H*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a"}}>
+    <div style={GS}><div style={{position:"relative",width:W*CELL,height:H*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a"}}>
       {items.map(i=><div key={i.id} style={{position:"absolute",left:i.x*CELL+3,top:i.y*CELL,fontSize:14}}>
         {i.bomb?<span>💣</span>:<PxI n="coin" size={16}/>}
       </div>)}
       <div style={{position:"absolute",left:pos*CELL,bottom:0,width:CELL,height:24,display:"flex",alignItems:"flex-end",justifyContent:"center"}}><PxChar ch={pet} size={20}/></div>
-    </div>
-    <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
-      <button className="btn btn-s" onClick={()=>setPos(p=>Math.max(0,p-1))} style={{padding:"7px 18px"}}>◀</button>
-      <button className="btn btn-s" onClick={()=>setPos(p=>Math.min(W-1,p+1))} style={{padding:"7px 18px"}}>▶</button>
+    </div></div>
+    <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:2}}>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.max(0,p-1))} style={{padding:"6px 16px"}}>◀</button>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.min(W-1,p+1))} style={{padding:"6px 16px"}}>▶</button>
     </div>
   </div>);
 }
 
 /* ═══ 피해피해 (Jump Runner) ═══ */
-function RunGame({pet,onEnd}){
+function RunGame({pet,onEnd,okRef}){
   const W=160,H=120,GY=95;
   const[score,setScore]=useState(0);
   const[act,setAct]=useState(true);
@@ -666,6 +685,8 @@ function RunGame({pet,onEnd}){
   const s=useRef({py:GY,vy:0,jumping:false,score:0,act:true,obs:[],tick:0,spawnCd:0});
 
   const jump=()=>{if(s.current.act&&!s.current.jumping){SFX.click();s.current.vy=-4.5;s.current.jumping=true}};
+
+  useEffect(()=>{if(!act)return;if(okRef)okRef.current=jump;return()=>{if(okRef)okRef.current=null}},[act]);
 
   useEffect(()=>{
     if(!act)return;
@@ -714,25 +735,19 @@ function RunGame({pet,onEnd}){
       <span style={{fontSize:10,fontWeight:700,color:"#888"}}>{score}m</span>
       <span style={{fontSize:10,fontWeight:700,color:"#ff4d6d"}}>피해피해!</span>
     </div>
-    <div style={{position:"relative",width:W,height:H,margin:"0 auto",background:"linear-gradient(180deg,#c4e8f5 0%,#e8f4ff 60%,#d4c8b8 60%,#e8ddd0 100%)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a",cursor:"pointer"}} onClick={jump}>
-      {/* Ground line */}
+    <div style={GS}><div style={{position:"relative",width:W,height:H,margin:"0 auto",background:"linear-gradient(180deg,#c4e8f5 0%,#e8f4ff 60%,#d4c8b8 60%,#e8ddd0 100%)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a",cursor:"pointer"}} onClick={jump}>
       <div style={{position:"absolute",top:GY,left:0,right:0,height:1,background:"#b8a898"}}/>
-      {/* Pet */}
-      <div style={{position:"absolute",left:20,top:py-18,zIndex:2}}>
-        <PxChar ch={pet} size={18}/>
-      </div>
-      {/* Obstacles */}
+      <div style={{position:"absolute",left:20,top:py-18,zIndex:2}}><PxChar ch={pet} size={18}/></div>
       {obs.map(o=><div key={o.id} style={{position:"absolute",left:o.x,top:GY-o.h,width:o.w,height:o.h,background:o.h>12?"linear-gradient(180deg,#ff4d6d,#d45c7f)":"linear-gradient(180deg,#b59af8,#8a6cd0)",borderRadius:"2px 2px 0 0"}}/>)}
-      {/* Clouds */}
       <div style={{position:"absolute",top:15,left:100,width:20,height:8,background:"#fff",borderRadius:4,opacity:.5}}/>
       <div style={{position:"absolute",top:25,left:40,width:16,height:6,background:"#fff",borderRadius:4,opacity:.3}}/>
-    </div>
+    </div></div>
     <div style={{marginTop:6}}><button className="btn btn-s" onClick={jump} style={{padding:"8px 30px",fontSize:11}}>점프!</button></div>
   </div>);
 }
 
 /* ═══ 쏘아쏘아 (Timing Shot) ═══ */
-function ShotGame({pet,onEnd}){
+function ShotGame({pet,onEnd,okRef}){
   const W=7,CELL=22;
   const[arrow,setArrow]=useState(0);
   const[arrowDir,setArrowDir]=useState(1);
@@ -764,6 +779,8 @@ function ShotGame({pet,onEnd}){
     },spd);
     return()=>clearInterval(iv);
   },[act,spd]);
+
+  useEffect(()=>{if(!act)return;if(okRef)okRef.current=()=>shoot();return()=>{if(okRef)okRef.current=null}},[act,flash]);
 
   const shoot=()=>{
     if(!actRef.current||flash)return;
@@ -804,7 +821,7 @@ function ShotGame({pet,onEnd}){
       <span style={{fontSize:10,fontWeight:700,color:"#ffd166"}}>명중: {score}</span>
       <span style={{fontSize:10,fontWeight:700,color:"#ff4d6d"}}>실패: {"✕".repeat(miss)}{"○".repeat(3-miss)}</span>
     </div>
-    <div style={{position:"relative",width:W*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,border:"2px solid #3a2a4a",padding:"10px 0",cursor:"pointer"}} onClick={shoot}>
+    <div style={GS}><div style={{position:"relative",width:W*CELL,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,border:"2px solid #3a2a4a",padding:"10px 0",cursor:"pointer"}} onClick={shoot}>
       {/* Target row */}
       <div style={{display:"flex",justifyContent:"center",gap:0,marginBottom:8}}>
         {Array.from({length:W}).map((_,i)=><div key={i} style={{width:CELL,height:CELL,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -824,8 +841,8 @@ function ShotGame({pet,onEnd}){
       </div>
       {/* Pet */}
       <div style={{display:"flex",justifyContent:"center"}}><PxChar ch={pet} size={30}/></div>
-    </div>
-    <div style={{marginTop:6}}><button className="btn btn-s" onClick={shoot} style={{padding:"8px 24px",fontSize:11}}>쏘기!</button></div>
+    </div></div>
+    <div style={{marginTop:6}}><button className="btn btn-s" onClick={shoot} style={{padding:"8px 24px",fontSize:11}}>쏘기! (OK)</button></div>
   </div>);
 }
 
@@ -1330,21 +1347,20 @@ function App(){
     else if(screen===SC.RESULT&&baby) okRef.current=()=>keepB();
     else okRef.current=null;
 
+    // GP screen: games will set their own refs
     if(![SC.GP].includes(screen)){lRef.current=null;rRef.current=null}
   },[started,screen,baby]);
 
   // Physical button handlers
   const btnA=()=>{ // ◀ Left
-    SFX.nav();
     if(lRef.current){lRef.current();return}
+    SFX.nav();
     if(!started)return;
     if([SC.MIXING,SC.RESULT,SC.GP].includes(screen))return;
     setMenuIdx(p=>(p-1+TABS.length)%TABS.length);
   };
   const btnB=()=>{ // OK Confirm
-    // First check if any screen registered a custom OK action
     if(okRef.current){okRef.current();return}
-    // Otherwise, navigate to cursor tab
     if(!started)return;
     SFX.ok();
     if([SC.MIXING,SC.GP].includes(screen))return;
@@ -1354,8 +1370,8 @@ function App(){
     if(tab.id===SC.MIX){setDatePartner(null);setDateStage(0)}
   };
   const btnC=()=>{ // ▶ Right
-    SFX.nav();
     if(rRef.current){rRef.current();return}
+    SFX.nav();
     if(!started)return;
     if([SC.MIXING,SC.RESULT,SC.GP].includes(screen))return;
     setMenuIdx(p=>(p+1)%TABS.length);
@@ -1710,7 +1726,7 @@ function App(){
                 </div>}
 
                 {screen===SC.GP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.GAMES}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>{gt==="catch"?"별 잡기":gt==="memory"?"카드 매칭":gt==="rps"?"가위바위보":gt==="zigzag"?"올라올라":gt==="dodge"?"받아받아":gt==="run"?"피해피해":"쏘아쏘아"}</span></div>
-                  {gt==="catch"&&<StarGame pet={pet} onEnd={onGE}/>}{gt==="memory"&&<MemGame onEnd={onGE}/>}{gt==="rps"&&<RPSGame pet={pet} onEnd={onGE}/>}{gt==="zigzag"&&<ZigzagGame pet={pet} onEnd={onGE}/>}{gt==="dodge"&&<CatchGame pet={pet} onEnd={onGE}/>}{gt==="run"&&<RunGame pet={pet} onEnd={onGE}/>}{gt==="shot"&&<ShotGame pet={pet} onEnd={onGE}/>}
+                  {gt==="catch"&&<StarGame pet={pet} onEnd={onGE} lRef={lRef} rRef={rRef} okRef={okRef}/>}{gt==="memory"&&<MemGame onEnd={onGE} okRef={okRef}/>}{gt==="rps"&&<RPSGame pet={pet} onEnd={onGE}/>}{gt==="zigzag"&&<ZigzagGame pet={pet} onEnd={onGE} okRef={okRef}/>}{gt==="dodge"&&<CatchGame pet={pet} onEnd={onGE} lRef={lRef} rRef={rRef}/>}{gt==="run"&&<RunGame pet={pet} onEnd={onGE} okRef={okRef}/>}{gt==="shot"&&<ShotGame pet={pet} onEnd={onGE} okRef={okRef}/>}
                 </div>}
 
                 {screen===SC.SHOP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>상점</span><div style={{flex:1}}/><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="coin" size={12}/><span style={{fontSize:10,fontWeight:700,color:"#d4a030"}}>{coins}</span></div></div>
