@@ -29,6 +29,8 @@ body{min-height:100vh;min-height:100dvh;background:linear-gradient(170deg,#1a102
 @keyframes heartPop{0%{opacity:0;transform:scale(0)}40%{opacity:1;transform:scale(1.2)}60%{transform:scale(.9)}100%{opacity:0;transform:translateY(-12px) scale(.5)}}
 @keyframes noteFloat{0%{opacity:0;transform:translateY(0) rotate(-10deg)}30%{opacity:1}100%{opacity:0;transform:translateY(-16px) rotate(15deg)}}
 @keyframes bubble{0%{opacity:0;transform:translateY(0) scale(.5)}30%{opacity:.8}100%{opacity:0;transform:translateY(-40px) scale(1)}}
+@keyframes chomp{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.8) translateY(2px)}}
+@keyframes foodPop{0%{opacity:0;transform:scale(0) translateY(10px)}30%{opacity:1;transform:scale(1.2) translateY(-5px)}50%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:scale(.5) translateY(-20px)}}
 .device{position:relative;width:100%;max-width:380px;margin:0 auto;padding:0 2px}
 .device-body{background:linear-gradient(180deg,#f0c8e0 0%,#e8b0d0 30%,#d898c0 100%);border-radius:32px 32px 40px 40px;padding:12px 10px 14px;box-shadow:0 10px 40px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.25),inset 0 -2px 0 rgba(0,0,0,.08);border:2px solid #c888b0;position:relative}
 .device-ring{width:26px;height:14px;border:3px solid #c0a0b0;border-bottom:none;border-radius:13px 13px 0 0;margin:0 auto -2px}
@@ -531,6 +533,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
   const walkTimer=useRef(null);
   const roomRef=useRef(null);
   const[bathing,setBathing]=useState(false);
+  const[eating,setEating]=useState(null); // {food, phase} phase: 0=show food, 1-3=chomp, 4=done
 
   // Walking behavior
   useEffect(()=>{
@@ -572,6 +575,18 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
     actionTimer.current=setInterval(pickAction,3000+Math.random()*2000);
     return()=>clearInterval(actionTimer.current);
   },[hunger,happy,sick]);
+
+  // Eating animation handler
+  const doFeed=useCallback((f)=>{
+    if(eating)return;
+    setShowFridge(false);
+    setEating({food:f.id,phase:0});
+    // Phase 0: food appears (300ms), Phase 1-3: chomp x3 (300ms each), Phase 4: done
+    setTimeout(()=>{SFX.feed();setEating(e=>e?{...e,phase:1}:null)},300);
+    setTimeout(()=>setEating(e=>e?{...e,phase:2}:null),600);
+    setTimeout(()=>setEating(e=>e?{...e,phase:3}:null),900);
+    setTimeout(()=>{onFeed(f);setEating(null)},1200);
+  },[eating,onFeed]);
 
   // Bath animation handler
   const doBath=useCallback(()=>{
@@ -617,6 +632,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
   const getCharStyle=()=>{
     const sz=petStage===0?48:petStage===1?64:80;
     const base={position:"absolute",bottom:14,left:`${posX}%`,transform:`translateX(-50%) scaleX(${dir})`,transition:"left .28s linear",imageRendering:"pixelated"};
+    if(eating)return{...base,bottom:14,left:"50%",transform:"translateX(-50%)",transition:"left .3s",animation:eating.phase>=1?"chomp .3s ease":"none"};
     if(bathing)return{...base,bottom:6,left:"50%",transform:"translateX(-50%) scaleY(.85)",transition:"all .3s",filter:"brightness(1.1)"};
     if(sleeping)return{...base,bottom:4,left:"50%",transform:"translateX(-50%) scaleY(.5) scaleX(1.15)",transition:"all .5s",filter:"brightness(.85) saturate(.7)",opacity:.85};
     if(sick)return{...base,bottom:10,left:"50%",transform:"translateX(-50%)",transition:"left .5s",filter:"hue-rotate(-15deg) saturate(0.7)"};
@@ -700,6 +716,14 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
         <div style={{animation:"zzz 2s ease infinite"}}><PxI n="sleep" size={16}/></div>
         <div style={{animation:"zzz 2.5s ease .8s infinite",marginLeft:12}}><PxI n="sleep" size={12}/></div>
       </div>}
+      {/* Eating animation - food icon near pet */}
+      {eating&&<div style={{position:"absolute",bottom:80,left:"50%",transform:"translateX(-50%)",pointerEvents:"none",zIndex:6}}>
+        <div style={{animation:eating.phase>=3?"foodPop 0.4s ease forwards":"popIn .3s ease",display:"flex",flexDirection:"column",alignItems:"center"}}>
+          <FoodI t={eating.food} size={24}/>
+          {eating.phase>=1&&eating.phase<3&&<div style={{fontSize:8,fontWeight:900,color:"#ff4d6d",marginTop:2,animation:"popIn .2s ease"}}>냠냠!</div>}
+        </div>
+      </div>}
+
       {bathing&&<>
         {[[-20,0],[0,.2],[20,.4],[10,.6],[-10,.8]].map(([dx,d],i)=><div key={i} style={{position:"absolute",bottom:20,left:`calc(50% + ${dx}px)`,pointerEvents:"none",animation:`bubble 1.2s ease ${d}s infinite`}}><PxI n="bath" size={10}/></div>)}
         <div style={{position:"absolute",bottom:0,left:"30%",right:"30%",height:"30%",background:"linear-gradient(0deg,rgba(126,200,227,.25),transparent)",borderRadius:"50% 50% 0 0",pointerEvents:"none",animation:"pulse 1s ease infinite"}}/>
@@ -756,7 +780,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
         <PxI n="happy" size={11}/><StatBar val={happy} max={5} color="#ff4d6d"/>
       </div>
       <div className="sec">밥</div>
-      {MEALS.map(f=>{const cnt=fridge[f.id];const free=f.p===0;return<div key={f.id} className="item" onClick={()=>{if(cnt>0){onFeed(f)}}} style={{opacity:cnt>0?1:0.3,marginBottom:2}}>
+      {MEALS.map(f=>{const cnt=fridge[f.id];const free=f.p===0;return<div key={f.id} className="item" onClick={()=>{if(cnt>0){doFeed(f)}}} style={{opacity:cnt>0?1:0.3,marginBottom:2}}>
         <FoodI t={f.id} size={20}/>
         <div style={{flex:1}}>
           <div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n} {free&&<span style={{fontSize:7,color:"#7ed4a8",fontWeight:800}}>무료</span>}</div>
@@ -765,7 +789,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
         <span style={{fontSize:10,fontWeight:700,color:cnt>0?"#2b1d34":"#ccc"}}>{cnt}개</span>
       </div>})}
       <div className="sec">간식</div>
-      {SNACKS.map(f=>{const cnt=fridge[f.id];return<div key={f.id} className="item" onClick={()=>{if(cnt>0){onFeed(f)}}} style={{opacity:cnt>0?1:0.3,marginBottom:2}}>
+      {SNACKS.map(f=>{const cnt=fridge[f.id];return<div key={f.id} className="item" onClick={()=>{if(cnt>0){doFeed(f)}}} style={{opacity:cnt>0?1:0.3,marginBottom:2}}>
         <FoodI t={f.id} size={20}/>
         <div style={{flex:1}}>
           <div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div>
@@ -777,7 +801,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
 
     {/* Mood text */}
     <div style={{textAlign:"center",marginTop:3,fontSize:9,color:sick?"#ff4d6d":sleeping?"#b59af8":"#bbb"}}>
-      {sick?"아파하고 있어요... 약을 주세요!":bathing?"목욕 중~ 기분 좋다!":sleeping?"쿨쿨... 자는 중이에요":poop>=3?"💩을 터치해서 치워주세요!":poop>=1?"방에 똥이...! 터치해서 치워주세요":dirty>=4?"목욕이 필요해요!":hunger<2?"배고파하고 있어요...":happy<2?"심심해하고 있어요...":action==="jump"?"신나게 뛰고 있어요!":action==="spin"?"빙글빙글~!":action==="sit"?"앉아서 쉬고 있어요":"돌아다니는 중..."}
+      {sick?"아파하고 있어요... 약을 주세요!":eating?"냠냠... 맛있다! 🍴":bathing?"목욕 중~ 기분 좋다!":sleeping?"쿨쿨... 자는 중이에요":poop>=3?"💩을 터치해서 치워주세요!":poop>=1?"방에 똥이...! 터치해서 치워주세요":dirty>=4?"목욕이 필요해요!":hunger<2?"배고파하고 있어요...":happy<2?"심심해하고 있어요...":action==="jump"?"신나게 뛰고 있어요!":action==="spin"?"빙글빙글~!":action==="sit"?"앉아서 쉬고 있어요":"돌아다니는 중..."}
     </div>
   </div>);
 }
