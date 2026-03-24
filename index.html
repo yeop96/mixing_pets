@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1028">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>믹싱 펫츠 - Mixing Pets</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;min-height:100dvh;background:linear-gradient(170deg,#1a1028 0%,#2a1838 40%,#1a2040 100%);font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+#root{width:100%;display:flex;flex-direction:column;align-items:center}
+@keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes popIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes slideUp{0%{transform:translateY(16px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes orbit1{0%{transform:rotate(0deg) translateX(50px) rotate(0deg)}100%{transform:rotate(360deg) translateX(50px) rotate(-360deg)}}
+@keyframes orbit2{0%{transform:rotate(180deg) translateX(50px) rotate(-180deg)}100%{transform:rotate(540deg) translateX(50px) rotate(-540deg)}}
+@keyframes eggShake{0%,100%{transform:rotate(0)}15%{transform:rotate(-12deg)}30%{transform:rotate(10deg)}45%{transform:rotate(-8deg)}60%{transform:rotate(6deg)}75%{transform:rotate(-4deg)}}
+@keyframes sparkle{0%{opacity:0;transform:scale(0)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-18px) scale(.4)}}
+@keyframes barGlow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 12px rgba(255,143,171,.1)}50%{box-shadow:0 0 20px rgba(255,143,171,.2)}}
+@keyframes msgFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-14px)}}
+@keyframes blink{0%,100%{opacity:.9}50%{opacity:.3}}
+@keyframes petHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes petSpin{0%{transform:scaleX(1)}25%{transform:scaleX(-0.2)}50%{transform:scaleX(-1)}75%{transform:scaleX(0.2)}100%{transform:scaleX(1)}}
+@keyframes zzz{0%{opacity:0;transform:translateY(0) scale(.6)}50%{opacity:1}100%{opacity:0;transform:translateY(-14px) scale(1)}}
+@keyframes heartPop{0%{opacity:0;transform:scale(0)}40%{opacity:1;transform:scale(1.2)}60%{transform:scale(.9)}100%{opacity:0;transform:translateY(-12px) scale(.5)}}
+@keyframes noteFloat{0%{opacity:0;transform:translateY(0) rotate(-10deg)}30%{opacity:1}100%{opacity:0;transform:translateY(-16px) rotate(15deg)}}
+@keyframes dropFall{0%{transform:translateY(0) scale(1)}60%{transform:translateY(var(--drop-dist,100px)) scale(1)}75%{transform:translateY(var(--drop-dist,100px)) scale(1.15,.85)}100%{transform:translateY(var(--drop-dist,100px)) scale(.6) ;opacity:0}}
+@keyframes catchHeart{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-20px) scale(.4)}}
+.device{position:relative;width:100%;max-width:380px;margin:0 auto;padding:0 2px}
+.device-body{background:linear-gradient(180deg,#f0c8e0 0%,#e8b0d0 30%,#d898c0 100%);border-radius:32px 32px 40px 40px;padding:12px 10px 14px;box-shadow:0 10px 40px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.25),inset 0 -2px 0 rgba(0,0,0,.08);border:2px solid #c888b0;position:relative}
+.device-ring{width:26px;height:14px;border:3px solid #c0a0b0;border-bottom:none;border-radius:13px 13px 0 0;margin:0 auto -2px}
+.device-ring::after{content:'';display:block;width:12px;height:6px;border:2px solid #b090a0;border-bottom:none;border-radius:7px 7px 0 0;margin:2px auto 0}
+.device-faceplate{background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border-radius:24px;padding:8px 6px 4px;margin-bottom:4px;border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden}
+.device-faceplate::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='4' r='.5' fill='rgba(255,255,255,0.08)'/%3E%3C/svg%3E");pointer-events:none}
+.scr{background:linear-gradient(180deg,#f4ecff,#ecf6ff,#ecfff4);border-radius:12px;border:2px solid #3a2a4a;box-shadow:inset 0 2px 6px rgba(0,0,0,.06);overflow:hidden;width:100%;display:flex;flex-direction:column;height:min(380px,calc(100dvh - 310px))}
+.scr-in{padding:10px;flex:1;overflow-y:auto;position:relative;-webkit-overflow-scrolling:touch}
+.scr-in::-webkit-scrollbar{width:3px}.scr-in::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:3px}
+.btn{border:none;border-radius:40px;font-weight:800;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.btn:hover:not(:disabled){transform:scale(1.05)}.btn:active:not(:disabled){transform:scale(.97)}.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn-m{background:linear-gradient(135deg,#ff4d6d,#ff87a9);color:#fff;box-shadow:0 4px 10px rgba(255,77,109,.25);padding:9px 22px;font-size:12px}
+.btn-s{background:linear-gradient(135deg,#b59af8,#7ec8e3);color:#fff;box-shadow:0 4px 10px rgba(181,154,248,.25);padding:7px 14px;font-size:11px}
+.card{cursor:pointer;transition:all .15s;border-radius:10px;padding:5px 3px 3px;text-align:center;background:rgba(255,255,255,.45);border:2px solid transparent}
+.card:hover{background:rgba(255,255,255,.7);transform:translateY(-2px)}.card.on{border-color:#ff4d6d;background:rgba(255,220,230,.5)}
+.tag{display:inline-block;background:rgba(0,0,0,.05);border-radius:7px;padding:2px 7px;margin:1px;font-size:8px;color:#888;font-weight:600}
+.sec{font-size:9px;font-weight:800;color:#bbb;letter-spacing:2px;margin:8px 0 5px}
+.item{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:9px;background:rgba(255,255,255,.42);cursor:pointer;transition:all .15s;border:1.5px solid transparent;margin-bottom:2px}
+.item:hover{background:rgba(255,255,255,.7);border-color:rgba(181,154,248,.12)}
+.menu{display:flex;gap:1px;padding:4px 3px;background:rgba(255,255,255,.35);border-top:1px solid rgba(0,0,0,.03);border-radius:0 0 10px 10px}
+.device-btns{display:flex;justify-content:center;gap:14px;margin-top:8px}
+.device-btn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;box-shadow:0 3px 8px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.35)}
+.device-btn:active{transform:translateY(1px);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.device-btn.a{background:linear-gradient(180deg,#e0a0c8,#d090b8)}.device-btn.b{background:linear-gradient(180deg,#d898c0,#c888b0)}.device-btn.c{background:linear-gradient(180deg,#e0a0c8,#d090b8)}
+.device-label{text-align:center;margin-top:4px;font-size:6px;letter-spacing:3px;color:rgba(255,255,255,.3);font-weight:800}
+@media(max-height:700px){
+  .scr{height:min(340px,calc(100dvh - 260px))}
+  .device-body{padding:10px 8px 12px;border-radius:28px 28px 36px 36px}
+  .device-btns{margin-top:6px;gap:12px}
+  .device-btn{width:26px;height:26px}
+  .device-ring{width:22px;height:12px}
+}
+@media(max-width:380px){
+  .device{padding:0}
+  .device-body{padding:10px 8px 12px;border-radius:28px 28px 36px 36px}
+  .device-faceplate{padding:6px 4px 3px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js"></script>
+<script type="text/babel" data-type="module">
+const {useState,useEffect,useRef,memo,useMemo,useCallback}=React;
+
+/* ═══ CHIPTUNE SOUND ENGINE ═══ */
+const SFX=(()=>{
+  let ctx=null;
+  let muted=false;
+  const V=0.12;
+  const init=()=>{
+    try{
+      if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();
+      if(ctx.state==='suspended')ctx.resume();
+    }catch(e){}
+  };
+  const beep=(freq,dur,type,v,delay)=>{
+    if(muted)return;
+    try{
+      init();if(!ctx)return;
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type=type||'square';o.frequency.value=freq;
+      const t=ctx.currentTime+(delay||0);
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(v||V,t+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+      o.connect(g);g.connect(ctx.destination);
+      o.start(t);o.stop(t+dur+0.05);
+    }catch(e){}
+  };
+  const S='square',T='triangle';
+  return{
+    get muted(){return muted},
+    toggleMute(){muted=!muted;return muted},
+    click(){beep(800,.06,S,.08)},
+    nav(){beep(600,.04,S,.06)},
+    ok(){beep(523,.08,S);beep(659,.08,S,V,.09);beep(784,.15,S,V,.18)},
+    back(){beep(500,.06,S);beep(400,.08,S,V,.07)},
+    feed(){beep(523,.07,S);beep(659,.07,S,V,.08);beep(784,.1,T,V,.16)},
+    buy(){beep(440,.06,S);beep(554,.06,S,V,.07);beep(659,.06,S,V,.14);beep(880,.12,T,V,.21)},
+    starCatch(){beep(988,.1,T,.1)},
+    cardFlip(){beep(660,.05,S,.06)},
+    cardMatch(){beep(659,.08,S);beep(784,.08,S,V,.09);beep(1047,.12,T,V,.18)},
+    rpsWin(){beep(523,.08,S);beep(659,.08,S,V,.09);beep(784,.08,S,V,.18);beep(1047,.15,T,V,.27)},
+    rpsLose(){beep(400,.12,S);beep(300,.15,S,V,.13)},
+    rpsDraw(){beep(500,.1,S);beep(500,.1,S,V,.12)},
+    hatch1(){beep(440,.15,S,.1)},
+    hatch2(){beep(440,.1,S);beep(554,.1,S,V,.11)},
+    born(){beep(523,.1,T);beep(659,.1,T,V,.11);beep(784,.1,T,V,.22);beep(1047,.08,T,V,.33);beep(1319,.2,T,V,.42)},
+    mixStart(){beep(330,.12,T);beep(440,.12,T,V,.13);beep(554,.12,T,V,.26);beep(659,.12,T,V,.39)},
+    mixDone(){beep(784,.1,T);beep(988,.1,T,V,.11);beep(1175,.1,T,V,.22);beep(1319,.08,T,V,.33);beep(1568,.2,S,V,.42)},
+    hungry(){beep(350,.15,S);beep(300,.2,S,.08,.16)},
+    happy(){beep(659,.06,T,.06);beep(784,.06,T,.06,.07);beep(880,.08,T,.06,.14)},
+    title(){beep(523,.12,T,.08);beep(659,.12,T,.08,.13);beep(784,.12,T,.08,.26);beep(1047,.08,T,.08,.39);beep(784,.08,T,.08,.48);beep(659,.08,T,.08,.57);beep(784,.08,T,.08,.66);beep(1047,.2,S,.06,.75)},
+    gameOver(){beep(784,.1,T);beep(659,.1,T,V,.11);beep(523,.1,T,V,.22);beep(440,.2,T,V,.33)},
+    sick(){beep(200,.2,S,.08);beep(180,.3,S,.06,.21)},
+    medicine(){beep(523,.08,T);beep(659,.08,T,V,.09);beep(784,.1,T,V,.18);beep(1047,.15,T,V,.27)},
+    angel(){beep(784,.15,T,.06);beep(659,.15,T,.06,.16);beep(523,.15,T,.06,.32);beep(440,.3,T,.06,.48)},
+    dateReveal(){beep(330,.1,T);beep(440,.1,T,V,.11);beep(554,.15,T,V,.22)},
+    dateAccept(){beep(523,.08,S);beep(659,.08,S,V,.09);beep(784,.12,T,V,.18)},
+    dateReject(){beep(400,.08,S);beep(350,.1,S,V,.09)},
+    growUp(){beep(523,.1,T);beep(659,.1,T,V,.12);beep(784,.1,T,V,.24);beep(1047,.15,T,V,.36)},
+    runaway(){beep(400,.15,T,.06);beep(350,.15,T,.06,.16);beep(300,.15,T,.06,.32);beep(250,.3,T,.06,.48)},
+    pet(){beep(880,.05,T,.06);beep(988,.06,T,.06,.06)},
+    tickle(){beep(784,.04,T,.06);beep(880,.04,T,.06,.05);beep(988,.04,T,.06,.1);beep(1047,.06,T,.06,.15)},
+  };
+})();
+
+/* ═══ PIXEL ENGINE ═══ */
+const SW=36,SH=40,CX=18,OLC=[43,29,52];
+function pxC(x,c,cx,cy,r){x.fillStyle=c;const r2=r*r+r*.45;for(let dy=-Math.ceil(r);dy<=Math.ceil(r);dy++)for(let dx=-Math.ceil(r);dx<=Math.ceil(r);dx++)if(dx*dx+dy*dy<=r2)x.fillRect(Math.round(cx+dx),Math.round(cy+dy),1,1)}
+function pxE(x,c,cx,cy,rx,ry){x.fillStyle=c;for(let dy=-Math.ceil(ry);dy<=Math.ceil(ry);dy++)for(let dx=-Math.ceil(rx);dx<=Math.ceil(rx);dx++)if(dx*dx/(rx*rx+.5)+dy*dy/(ry*ry+.5)<=1)x.fillRect(Math.round(cx+dx),Math.round(cy+dy),1,1)}
+function pxTri(x,c,x1,y1,x2,y2,x3,y3){x.fillStyle=c;const mY=Math.floor(Math.min(y1,y2,y3)),MY=Math.ceil(Math.max(y1,y2,y3)),mX=Math.floor(Math.min(x1,x2,x3)),MX=Math.ceil(Math.max(x1,x2,x3));for(let y=mY;y<=MY;y++)for(let xx=mX;xx<=MX;xx++){const d1=(xx-x2)*(y1-y2)-(x1-x2)*(y-y2),d2=(xx-x3)*(y2-y3)-(x2-x3)*(y-y3),d3=(xx-x1)*(y3-y1)-(x3-x1)*(y-y1);if(!((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0)))x.fillRect(xx,y,1,1)}}
+function olSz(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,out=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;if(d[i+3]<128)continue;for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1]]){const nx=x+dx,ny=y+dy;if(nx<0||nx>=w||ny<0||ny>=h)continue;if(d[(ny*w+nx)*4+3]<128)out.push(nx,ny)}}for(let k=0;k<out.length;k+=2){const i=(out[k+1]*w+out[k])*4;d[i]=OLC[0];d[i+1]=OLC[1];d[i+2]=OLC[2];d[i+3]=255}ctx.putImageData(id,0,0)}
+
+/* ═══ ICON CACHE ═══ */
+const IC={};
+function mkI(k,w,h,fn){if(IC[k])return IC[k];const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.imageSmoothingEnabled=false;fn(x);olSz(x,w,h);IC[k]=c.toDataURL();return IC[k]}
+
+function PxI({n,size=24}){
+  const src=useMemo(()=>{const S=16;return mkI(n,S,S,x=>{
+    switch(n){
+      case"home":pxTri(x,"#ff8fab",8,1,1,7,15,7);x.fillStyle="#ffe4ec";x.fillRect(3,7,10,8);x.fillStyle="#b59af8";x.fillRect(6,10,4,5);x.fillStyle="#7ec8e3";x.fillRect(10,8,2,2);break;
+      case"feed":pxE(x,"#d06838",8,9,5,5);pxE(x,"#ffcab0",8,8,4,4);pxC(x,"#ff9a6c",5,5,2);pxC(x,"#ff9a6c",11,5,2);x.fillStyle="#d06838";x.fillRect(7,3,2,3);break;
+      case"game":x.fillStyle="#b59af8";x.fillRect(2,5,12,8);x.fillRect(3,4,10,1);x.fillRect(3,13,10,1);x.fillStyle="#ffd166";x.fillRect(4,7,2,2);x.fillRect(4,10,2,2);pxC(x,"#ff4d6d",11,8,1);pxC(x,"#ff4d6d",11,11,1);break;
+      case"shop":x.fillStyle="#7ec8e3";x.fillRect(2,3,12,2);x.fillRect(1,5,14,1);x.fillStyle="#ffe8a8";x.fillRect(3,6,10,8);x.fillStyle="#ffd166";x.fillRect(3,6,10,1);x.fillStyle="#ff8fab";x.fillRect(6,8,4,3);break;
+      case"mix":x.fillStyle="#ff4d6d";[{x:3,y:4,w:2},{x:7,y:4,w:2},{x:2,y:5,w:2},{x:8,y:5,w:2},{x:2,y:6,w:3},{x:7,y:6,w:3},{x:2,y:7,w:8},{x:3,y:8,w:6},{x:4,y:9,w:4},{x:5,y:10,w:2}].forEach(r=>x.fillRect(r.x,r.y,r.w,1));x.fillStyle="#ffd166";x.fillRect(11,2,2,2);x.fillRect(12,1,1,1);break;
+      case"tree":pxC(x,"#7ed4a8",8,4,4);pxC(x,"#4aaa7a",6,3,2);x.fillStyle="#d06838";x.fillRect(7,8,2,6);x.fillStyle="#ffd166";x.fillRect(6,3,1,1);break;
+      case"coin":pxC(x,"#d4a030",8,8,5);pxC(x,"#ffd166",7,7,4);x.fillStyle="#ffe8a8";x.fillRect(6,5,1,1);x.fillStyle="#d4a030";x.fillRect(7,6,2,4);break;
+      case"hunger":pxE(x,"#ff9a6c",8,9,6,5);pxE(x,"#ffcab0",7,8,4,3);x.fillStyle="#d06838";x.fillRect(6,3,1,4);x.fillRect(8,2,1,4);x.fillRect(10,3,1,4);break;
+      case"happy":x.fillStyle="#ff4d6d";[{x:2,y:4,w:3},{x:8,y:4,w:3},{x:1,y:5,w:4},{x:7,y:5,w:4},{x:1,y:7,w:10},{x:2,y:9,w:8},{x:3,y:10,w:6},{x:4,y:11,w:4},{x:5,y:12,w:2}].forEach(r=>x.fillRect(r.x,r.y,r.w,1));x.fillRect(1,6,10,1);break;
+      case"star":x.fillStyle="#ffd166";x.fillRect(7,1,2,2);x.fillRect(6,3,4,1);x.fillRect(2,4,12,2);x.fillRect(3,6,10,1);x.fillRect(4,7,8,1);x.fillRect(5,8,6,1);x.fillRect(4,9,3,1);x.fillRect(9,9,3,1);x.fillRect(3,10,2,1);x.fillRect(11,10,2,1);break;
+      case"cards":x.fillStyle="#b59af8";x.fillRect(1,2,8,11);x.fillStyle="#ffd166";x.fillRect(3,5,4,1);x.fillRect(4,6,2,2);x.fillStyle="#7ec8e3";x.fillRect(7,4,8,11);x.fillStyle="#ff4d6d";x.fillRect(10,7,2,1);x.fillRect(9,8,4,1);break;
+      case"rps":pxC(x,"#ffcab0",8,8,5);pxC(x,"#ffe4ec",7,7,3);x.fillStyle="#d06838";x.fillRect(5,5,2,1);x.fillRect(8,5,2,1);x.fillStyle="#ff4d6d";x.fillRect(6,10,4,1);break;
+      case"sweat":x.fillStyle="#7ec8e3";x.fillRect(7,2,2,1);x.fillRect(6,3,4,2);x.fillRect(7,5,2,1);break;
+      case"sad":x.fillStyle="#7ec8e3";x.fillRect(4,8,2,3);x.fillRect(10,8,2,3);break;
+      case"medicine":x.fillStyle="#ff4d6d";x.fillRect(6,2,4,12);x.fillRect(2,6,12,4);x.fillStyle="#fff";x.fillRect(7,3,2,10);x.fillRect(3,7,10,2);break;
+      case"sick":x.fillStyle="#ffd166";x.fillRect(7,1,2,10);x.fillRect(6,11,4,2);pxC(x,"#ff4d6d",8,13,2);x.fillStyle="#ff4d6d";x.fillRect(6,4,1,3);break;
+    }
+  })},[n]);
+  return <img src={src} alt={n} style={{width:size,height:size,imageRendering:"pixelated"}} draggable={false}/>;
+}
+
+function FoodI({t,size=20}){
+  const src=useMemo(()=>mkI("f_"+t,12,12,x=>{
+    switch(t){
+      case"rice":pxTri(x,"#fff",6,1,1,10,11,10);x.fillStyle="#1a1a1a";x.fillRect(3,6,1,1);x.fillRect(6,5,1,1);x.fillRect(8,7,1,1);pxTri(x,"#4aaa7a",6,0,4,3,8,3);break;
+      case"curry":pxE(x,"#d06838",4,6,3,3);pxE(x,"#fff",8,6,3,3);x.fillStyle="#ffd166";x.fillRect(3,4,2,2);break;
+      case"steak":pxE(x,"#d06838",6,6,5,4);pxE(x,"#ff9a6c",5,5,3,2);break;
+      case"cake":x.fillStyle="#ffcab0";x.fillRect(2,5,8,6);x.fillStyle="#ff8fab";x.fillRect(2,4,8,2);x.fillStyle="#ff4d6d";x.fillRect(5,1,2,4);x.fillStyle="#ffd166";x.fillRect(5,0,2,1);break;
+      case"candy":pxC(x,"#ff4d6d",6,6,3);x.fillStyle="#fff";x.fillRect(2,4,2,1);x.fillRect(9,7,2,1);x.fillStyle="#ffd166";x.fillRect(1,3,2,1);x.fillRect(9,8,2,1);break;
+      case"icecream":pxC(x,"#ff8fab",5,4,3);pxC(x,"#7ec8e3",9,4,2);pxTri(x,"#ffd166",6,11,3,6,9,6);break;
+    }
+  }),[t]);
+  return <img src={src} style={{width:size,height:size,imageRendering:"pixelated"}} draggable={false}/>;
+}
+
+/* ═══ RPS Icon - EXTRACTED to top level (fix hooks violation) ═══ */
+const RpsIcon = memo(function RpsIcon({t,sz=28}){
+  const src=useMemo(()=>mkI("rps_"+t,12,12,x=>{
+    if(t===0){pxC(x,"#ffcab0",6,6,5);x.fillStyle="#d06838";x.fillRect(3,3,6,1);x.fillRect(3,8,6,1)}
+    else if(t===1){x.fillStyle="#ffcab0";x.fillRect(1,3,10,7);x.fillStyle="#ffe4ec";[3,5,7,9].forEach(xx=>x.fillRect(xx,1,2,3))}
+    else{x.fillStyle="#ffcab0";x.fillRect(2,3,8,3);x.fillStyle="#ffe4ec";x.fillRect(3,1,2,3);x.fillRect(7,1,2,3);x.fillStyle="#ffcab0";x.fillRect(2,6,3,4);x.fillRect(7,6,3,4)}
+  }),[t]);
+  return <img src={src} style={{width:sz,height:sz,imageRendering:"pixelated"}} draggable={false}/>;
+});
+
+/* ═══ CHAR DATA ═══ */
+const SPECIES=["mochi","cat","bunny","bear","bird","ghost","slime","dino"];
+const EYES=["round","sparkle","sleepy","star","wink","dot","big","heart"];
+const MOUTHS=["smile","cat","open","tiny","tongue","w","happy","oval"];
+const CHEEKS=["round","heart","star","none","blush","dot"];
+const DECOS=["none","bow","crown","flower","halo","horn","ribbon","star_pin"];
+const PALS=[
+  {m:"#ff8fab",l:"#ffc4d6",d:"#d45c7f",a:"#ffe4ec",n:"모찌"},
+  {m:"#7ec8e3",l:"#b8e4f0",d:"#4a9ab8",a:"#e0f4fa",n:"구르미"},
+  {m:"#b59af8",l:"#d5c4ff",d:"#8a6cd0",a:"#ede4ff",n:"냥이"},
+  {m:"#7ed4a8",l:"#b8f0d4",d:"#4aaa7a",a:"#e4fff0",n:"또리"},
+  {m:"#ffd166",l:"#ffe8a8",d:"#d4a030",a:"#fff5d6",n:"별이"},
+  {m:"#ff9a6c",l:"#ffcab0",d:"#d06838",a:"#ffe8dc",n:"곰돌"},
+  {m:"#6ed4c8",l:"#aaf0e8",d:"#3aaa9e",a:"#e0faf8",n:"슬라임"},
+  {m:"#e0a0d0",l:"#f0c8e8",d:"#b870a8",a:"#f8e8f4",n:"공룡이"},
+];
+const FP={mochi:{ey:17,my:23,cy:20,ex:5},cat:{ey:18,my:23,cy:21,ex:5},bunny:{ey:19,my:24,cy:22,ex:5},bear:{ey:18,my:23,cy:21,ex:5},bird:{ey:18,my:23,cy:21,ex:4},ghost:{ey:16,my:21,cy:19,ex:5},slime:{ey:20,my:25,cy:23,ex:5},dino:{ey:17,my:22,cy:20,ex:5}};
+const NP=["모","뽀","미","콩","별","달","쿠","푸","뭉","토","루","솜"];
+const NS=["찌","미","콩","이","롱","키","니","치","루","리","돌","탕"];
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+const pick=(a,b)=>Math.random()>.5?a:b;
+const hex2rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const rgb2hex=(r,g,b)=>'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+const mixH=(a,b)=>{const[r1,g1,b1]=hex2rgb(a),[r2,g2,b2]=hex2rgb(b);return rgb2hex((r1+r2)>>1,(g1+g2)>>1,(b1+b2)>>1)};
+
+function makeChar(id,i){const p=PALS[i%8];return{id,name:p.n,species:SPECIES[i%8],eyes:EYES[i%8],mouth:MOUTHS[i%8],cheeks:CHEEKS[i%6],deco:DECOS[i%8],pal:{m:p.m,l:p.l,d:p.d,a:p.a}}}
+const BASE=Array.from({length:8},(_,i)=>makeChar(i,i));
+function mixChars(a,b){const mut=Math.random()<.12;return{id:Date.now()+Math.random(),name:rand(NP)+rand(NS),species:mut?rand(SPECIES):pick(a.species,b.species),eyes:mut?rand(EYES):pick(a.eyes,b.eyes),mouth:pick(a.mouth,b.mouth),cheeks:pick(a.cheeks,b.cheeks),deco:pick(a.deco,b.deco),pal:{m:mixH(a.pal.m,b.pal.m),l:mixH(a.pal.l,b.pal.l),d:mixH(a.pal.d,b.pal.d),a:mixH(a.pal.a,b.pal.a)},parents:[a.name,b.name]}}
+
+/* ═══ BLIND DATE SYSTEM ═══ */
+function generatePartner(history){
+  const r=Math.random();
+  let ch;
+  if(r<0.6||history.length===0){
+    // 60%: random BASE character
+    ch={...BASE[Math.floor(Math.random()*BASE.length)]};
+  }else if(r<0.85){
+    // 25%: "wild" mix of 2 random BASE chars
+    const a=BASE[Math.floor(Math.random()*BASE.length)];
+    const b=BASE[Math.floor(Math.random()*BASE.length)];
+    ch=mixChars(a,b);
+  }else{
+    // 15%: from history
+    ch={...history[Math.floor(Math.random()*history.length)]};
+  }
+  // Apply slight color mutation for variety
+  const shift=()=>Math.floor(Math.random()*30)-15;
+  const mutC=h=>{const[r,g,b]=hex2rgb(h);return rgb2hex(r+shift(),g+shift(),b+shift())};
+  ch.pal={m:mutC(ch.pal.m),l:mutC(ch.pal.l),d:mutC(ch.pal.d),a:mutC(ch.pal.a)};
+  ch.id=Date.now()+Math.random();
+  ch.name=rand(NP)+rand(NS);
+  return ch;
+}
+function calcCompatibility(a,b){
+  let s=50;
+  if(a.species===b.species)s+=15;
+  if(a.eyes===b.eyes)s+=5;
+  if(a.mouth===b.mouth)s+=5;
+  const[r1,g1,b1]=hex2rgb(a.pal.m),[r2,g2,b2]=hex2rgb(b.pal.m);
+  const dist=Math.sqrt((r1-r2)**2+(g1-g2)**2+(b1-b2)**2);
+  s+=dist>200?10:dist>100?5:-5;
+  s+=Math.floor(Math.random()*20)-10;
+  return Math.max(10,Math.min(100,Math.round(s)));
+}
+
+/* ═══ BODY DRAWING ═══ */
+function drawBody(ctx,sp,p){
+  const B={
+    mochi:()=>{pxE(ctx,p.m,12,35,4,2);pxE(ctx,p.m,24,35,4,2);pxE(ctx,p.m,5,22,3,2);pxE(ctx,p.m,31,22,3,2);pxE(ctx,p.m,CX,22,12,12);pxE(ctx,p.a,CX,25,7,6);pxE(ctx,p.l,13,15,3,2)},
+    cat:()=>{pxC(ctx,p.m,32,18,2);pxC(ctx,p.m,34,15,2);ctx.fillStyle=p.m;ctx.fillRect(30,21,2,2);ctx.fillRect(31,19,2,2);ctx.fillRect(32,17,2,2);pxTri(ctx,p.m,8,14,4,4,14,10);pxTri(ctx,p.m,28,14,32,4,22,10);pxTri(ctx,p.d,8,13,6,7,12,11);pxTri(ctx,p.d,28,13,30,7,24,11);pxE(ctx,p.m,12,35,4,2);pxE(ctx,p.m,24,35,4,2);pxE(ctx,p.m,5,23,3,2);pxE(ctx,p.m,31,23,3,2);pxE(ctx,p.m,CX,23,11,12);pxE(ctx,p.a,CX,26,6,5)},
+    bunny:()=>{pxE(ctx,p.m,11,8,4,10);pxE(ctx,p.m,25,8,4,10);pxE(ctx,p.d,11,8,2,7);pxE(ctx,p.d,25,8,2,7);pxC(ctx,p.l,CX,36,3);pxE(ctx,p.m,11,36,5,2);pxE(ctx,p.m,25,36,5,2);pxE(ctx,p.m,5,24,3,2);pxE(ctx,p.m,31,24,3,2);pxE(ctx,p.m,CX,24,11,11);pxE(ctx,p.a,CX,27,7,5)},
+    bear:()=>{pxC(ctx,p.m,8,10,5);pxC(ctx,p.m,28,10,5);pxC(ctx,p.d,8,10,3);pxC(ctx,p.d,28,10,3);pxE(ctx,p.m,12,35,4,2);pxE(ctx,p.m,24,35,4,2);pxE(ctx,p.m,5,22,3,3);pxE(ctx,p.m,31,22,3,3);pxE(ctx,p.m,CX,22,12,12);pxE(ctx,p.a,CX,25,7,6);pxE(ctx,p.l,CX,18,5,3)},
+    bird:()=>{pxTri(ctx,p.d,CX,6,15,13,21,13);pxTri(ctx,p.m,20,7,17,13,23,13);pxE(ctx,p.m,4,22,5,7);pxE(ctx,p.m,32,22,5,7);pxE(ctx,p.l,4,21,3,5);pxE(ctx,p.l,32,21,3,5);ctx.fillStyle="#ffb347";[13,15,21,23].forEach(xx=>ctx.fillRect(xx,35,1,3));pxE(ctx,p.m,CX,23,10,11);pxE(ctx,p.a,CX,26,6,6)},
+    ghost:()=>{pxE(ctx,p.m,5,18,3,2);pxE(ctx,p.m,31,18,3,2);pxE(ctx,p.m,CX,16,12,10);ctx.fillStyle=p.m;ctx.fillRect(6,16,24,18);pxE(ctx,p.a,CX,20,8,5);ctx.clearRect(0,32,8,8);ctx.clearRect(13,32,5,8);ctx.clearRect(23,32,5,8);ctx.clearRect(30,32,6,8);pxE(ctx,p.m,10,33,4,3);pxE(ctx,p.m,18,33,4,3);pxE(ctx,p.m,26,33,4,3);pxE(ctx,p.l,12,12,4,3)},
+    slime:()=>{pxE(ctx,p.m,CX,24,13,11);pxE(ctx,p.m,CX,30,14,5);pxE(ctx,p.m,CX,18,9,5);pxE(ctx,p.m,4,24,3,2);pxE(ctx,p.m,32,24,3,2);pxC(ctx,p.l,12,17,3);pxC(ctx,"#fff",11,16,1)},
+    dino:()=>{pxC(ctx,p.m,31,30,2);pxC(ctx,p.m,33,28,2);ctx.fillStyle=p.m;ctx.fillRect(29,30,3,2);ctx.fillRect(31,28,3,2);pxTri(ctx,p.d,CX,5,15,11,21,11);pxTri(ctx,p.d,22,7,19,12,25,12);pxE(ctx,p.m,12,35,4,2);pxE(ctx,p.m,24,35,4,2);pxE(ctx,p.m,5,22,3,2);pxE(ctx,p.m,31,22,3,2);pxE(ctx,p.m,CX,22,11,12);pxE(ctx,p.a,CX,25,7,6);ctx.fillStyle=p.d;ctx.fillRect(14,23,8,1);ctx.fillRect(15,26,6,1)},
+  };(B[sp]||B.mochi)();
+}
+function drawEyes(ctx,s,cx1,cy,cx2){const W='#fff',B='#1a0e08';const one=cx=>{switch(s){case"round":pxC(ctx,W,cx,cy,3);pxC(ctx,B,cx+1,cy,2);ctx.fillStyle=W;ctx.fillRect(cx+2,cy-1,1,1);break;case"sparkle":pxC(ctx,B,cx,cy,3);pxC(ctx,W,cx+1,cy-1,1);ctx.fillStyle=W;ctx.fillRect(cx-1,cy+1,1,1);ctx.fillRect(cx+2,cy+2,1,1);break;case"sleepy":ctx.fillStyle=B;for(let i=-2;i<=2;i++)ctx.fillRect(cx+i,cy-(i===0?1:0),1,1);break;case"star":ctx.fillStyle=B;ctx.fillRect(cx,cy-2,1,5);ctx.fillRect(cx-2,cy,5,1);ctx.fillRect(cx-1,cy-1,3,3);ctx.fillStyle=W;ctx.fillRect(cx+1,cy-1,1,1);break;case"dot":pxC(ctx,B,cx,cy,1);break;case"big":pxC(ctx,W,cx,cy,4);pxC(ctx,B,cx+1,cy,3);pxC(ctx,W,cx+2,cy-1,1);break;case"heart":ctx.fillStyle="#e8457c";[[-1,-1],[1,-1],[-2,0],[2,0],[-2,-1],[2,-1],[-1,0],[1,0],[0,0],[0,1],[-1,1],[1,1]].forEach(([dx,dy])=>ctx.fillRect(cx+dx,cy+dy,1,1));break;default:pxC(ctx,B,cx,cy,2)}};if(s==="wink"){one(cx1);ctx.fillStyle='#1a0e08';for(let i=-2;i<=2;i++)ctx.fillRect(cx2+i,cy-(i===0?1:0),1,1)}else{one(cx1);one(cx2)}}
+function drawMouth(ctx,s,cx,cy,sp){const B='#1a0e08';ctx.fillStyle=B;if(sp==="bird"){ctx.fillStyle="#ffb347";pxTri(ctx,"#ffb347",cx,cy-2,cx-2,cy+1,cx+2,cy+1);ctx.fillStyle=B;ctx.fillRect(cx,cy+2,1,1);return}if(sp==="bear")pxC(ctx,B,cx,cy-2,1);switch(s){case"smile":ctx.fillRect(cx-2,cy,1,1);ctx.fillRect(cx+2,cy,1,1);ctx.fillRect(cx-1,cy+1,3,1);break;case"cat":ctx.fillRect(cx,cy-1,1,1);ctx.fillRect(cx-2,cy,1,1);ctx.fillRect(cx+2,cy,1,1);ctx.fillRect(cx-3,cy+1,1,1);ctx.fillRect(cx+3,cy+1,1,1);ctx.fillRect(cx-1,cy+1,1,1);ctx.fillRect(cx+1,cy+1,1,1);break;case"open":pxC(ctx,B,cx,cy,2);ctx.fillStyle="#e85070";ctx.fillRect(cx-1,cy+1,2,1);break;case"tiny":ctx.fillRect(cx,cy,1,1);break;case"tongue":ctx.fillRect(cx-2,cy,1,1);ctx.fillRect(cx+2,cy,1,1);ctx.fillRect(cx-1,cy+1,3,1);ctx.fillStyle="#ff8fab";ctx.fillRect(cx-1,cy+2,2,2);break;case"w":ctx.fillRect(cx-3,cy,1,1);ctx.fillRect(cx-1,cy+1,1,1);ctx.fillRect(cx+1,cy+1,1,1);ctx.fillRect(cx+3,cy,1,1);ctx.fillRect(cx,cy,1,1);break;case"happy":ctx.fillRect(cx-3,cy,1,1);ctx.fillRect(cx+3,cy,1,1);ctx.fillRect(cx-2,cy+1,5,1);break;case"oval":ctx.fillRect(cx-1,cy,3,1);ctx.fillRect(cx,cy-1,1,1);ctx.fillRect(cx,cy+1,1,1);break}}
+function drawCheeks(ctx,s,cx1,cy,cx2,pm){if(s==="none")return;const[r,g,b]=hex2rgb(pm);ctx.globalAlpha=.55;const bl=rgb2hex(Math.min(255,r+40),Math.max(0,g-30),Math.max(0,b-20));pxC(ctx,bl,cx1,cy,2);pxC(ctx,bl,cx2,cy,2);ctx.globalAlpha=1}
+function drawDeco(ctx,s,sp){const t=sp==="ghost"?4:sp==="bunny"?-2:sp==="dino"?3:6;switch(s){case"bow":ctx.fillStyle="#ff4d6d";ctx.fillRect(CX-4,t,3,2);ctx.fillRect(CX-3,t-1,1,1);ctx.fillRect(CX-3,t+2,1,1);ctx.fillRect(CX+2,t,3,2);ctx.fillRect(CX+3,t-1,1,1);ctx.fillRect(CX+3,t+2,1,1);ctx.fillStyle="#ffd166";ctx.fillRect(CX-1,t,2,2);break;case"crown":ctx.fillStyle="#ffd166";ctx.fillRect(CX-5,t+2,10,2);ctx.fillRect(CX-4,t+1,1,1);ctx.fillRect(CX,t,1,1);ctx.fillRect(CX+4,t+1,1,1);ctx.fillRect(CX-3,t+1,1,1);ctx.fillRect(CX+3,t+1,1,1);ctx.fillStyle="#ff4d6d";ctx.fillRect(CX,t+2,1,1);break;case"flower":ctx.fillStyle="#ff8fab";ctx.fillRect(CX+8,t+3,1,1);ctx.fillRect(CX+10,t+3,1,1);ctx.fillRect(CX+9,t+2,1,1);ctx.fillRect(CX+9,t+4,1,1);ctx.fillStyle="#ffd166";ctx.fillRect(CX+9,t+3,1,1);break;case"halo":ctx.fillStyle="#ffd166";ctx.fillRect(CX-4,t-2,8,1);ctx.fillRect(CX-5,t-1,1,1);ctx.fillRect(CX+4,t-1,1,1);break;case"horn":ctx.fillStyle="#ffd166";ctx.fillRect(CX-7,t+2,2,1);ctx.fillRect(CX-6,t+1,1,1);ctx.fillRect(CX-5,t,1,1);ctx.fillRect(CX+6,t+2,2,1);ctx.fillRect(CX+6,t+1,1,1);ctx.fillRect(CX+5,t,1,1);break;case"ribbon":ctx.fillStyle="#ff8fab";ctx.fillRect(CX+7,t+1,2,3);ctx.fillRect(CX+6,t+2,1,1);ctx.fillRect(CX+9,t+2,1,1);ctx.fillStyle="#c9a5f7";ctx.fillRect(CX+7,t+2,1,1);break;case"star_pin":ctx.fillStyle="#ffd166";ctx.fillRect(CX+8,t+2,1,3);ctx.fillRect(CX+7,t+3,3,1);break}}
+
+function renderSprite(ch){const c=document.createElement('canvas');c.width=SW;c.height=SH;const x=c.getContext('2d');x.imageSmoothingEnabled=false;drawBody(x,ch.species,ch.pal);const fp=FP[ch.species];drawCheeks(x,ch.cheeks,CX-fp.ex-4,fp.cy,CX+fp.ex+4,ch.pal.m);if(ch.deco!=="none")drawDeco(x,ch.deco,ch.species);olSz(x,SW,SH);drawEyes(x,ch.eyes,CX-fp.ex,fp.ey,CX+fp.ex);drawMouth(x,ch.mouth,CX,fp.my,ch.species);return c.toDataURL()}
+const PxChar=memo(function PxChar({ch,size=100,idle=false,anim=false}){const src=useMemo(()=>renderSprite(ch),[ch.species,ch.eyes,ch.mouth,ch.cheeks,ch.deco,ch.pal.m,ch.pal.l,ch.pal.d,ch.pal.a]);return <img src={src} alt={ch.name} draggable={false} style={{width:size,height:size*(SH/SW),imageRendering:'pixelated',...(idle?{animation:'idle 1.8s ease-in-out infinite'}:{}),...(anim?{animation:'popIn .4s ease'}:{})}}/>});
+
+/* ═══ EGG ═══ */
+function PxEgg({color="#ffd6e0",size=60,shake=false,crack=0}){
+  const src=useMemo(()=>mkI("egg_"+color+crack,20,24,x=>{
+    pxE(x,"#fff8f0",10,13,7,10);pxE(x,color,10,16,6,6);
+    x.fillStyle="#fff";x.fillRect(7,8,2,2);x.fillRect(8,7,1,1);
+    if(crack>=1){x.fillStyle="#2b1d34";x.fillRect(8,10,1,3);x.fillRect(9,12,1,2);x.fillRect(7,11,1,2)}
+    if(crack>=2){x.fillStyle="#2b1d34";x.fillRect(10,9,1,2);x.fillRect(11,11,1,2);x.fillRect(6,9,1,3)}
+  }),[color,crack]);
+  return <img src={src} style={{width:size,height:size*1.2,imageRendering:"pixelated",...(shake?{animation:"eggShake .25s ease infinite"}:{})}} draggable={false}/>;
+}
+
+/* ═══ GAME DATA ═══ */
+const FOODS=[{id:"rice",n:"주먹밥",p:10,h:2,hp:0},{id:"curry",n:"카레",p:20,h:3,hp:1},{id:"steak",n:"스테이크",p:40,h:4,hp:2},{id:"cake",n:"케이크",p:15,h:0,hp:3},{id:"candy",n:"사탕",p:5,h:0,hp:2},{id:"icecream",n:"아이스크림",p:12,h:0,hp:3}];
+const ACCS=[{id:"r",n:"리본",p:50,deco:"ribbon",desc:"벽에 거는 귀여운 리본"},{id:"g",n:"안경",p:80,deco:"glasses",desc:"선반에 올려두는 안경"},{id:"s",n:"별 배지",p:30,deco:"star_deco",desc:"벽에 빛나는 별 장식"},{id:"h",n:"하트 목걸이",p:100,deco:"heart_deco",desc:"벽에 거는 하트 오너먼트"}];
+
+/* ═══ MINI-GAMES (bugs fixed) ═══ */
+function StarGame({pet,onEnd}){
+  const W=9,H=12;
+  const[pos,setPos]=useState(4);
+  const[stars,setStars]=useState([]);
+  const[score,setScore]=useState(0);
+  const[time,setTime]=useState(15);
+  const[act,setAct]=useState(true);
+  const scoreRef=useRef(0);
+
+  useEffect(()=>{
+    const iv=setInterval(()=>setTime(t=>{if(t<=1){setAct(false);clearInterval(iv);return 0}return t-1}),1000);
+    return()=>clearInterval(iv);
+  },[]);
+  useEffect(()=>{if(!act)SFX.gameOver()},[act]);
+
+  useEffect(()=>{
+    if(!act)return;
+    let frame=0;
+    let raf;
+    const loop=()=>{
+      frame++;
+      if(frame%8===0){
+        setStars(p=>[...p,{x:Math.floor(Math.random()*W),y:0,id:Date.now()+Math.random()}]);
+      }
+      setStars(p=>p.map(s=>({...s,y:s.y+1})).filter(s=>s.y<H));
+      raf=requestAnimationFrame(loop);
+    };
+    raf=requestAnimationFrame(loop);
+    return()=>cancelAnimationFrame(raf);
+  },[act]);
+
+  // Collision check in separate effect with pos only
+  const posRef=useRef(pos);
+  posRef.current=pos;
+  useEffect(()=>{
+    const iv=setInterval(()=>{
+      setStars(prev=>{
+        let caught=0;
+        const remaining=prev.filter(s=>{
+          if(s.y>=H-2 && s.x===posRef.current){caught++;return false}
+          return true;
+        });
+        if(caught>0){
+          scoreRef.current+=caught;
+          setScore(scoreRef.current);
+          SFX.starCatch();
+        }
+        return remaining;
+      });
+    },100);
+    return()=>clearInterval(iv);
+  },[]);
+
+  if(!act){
+    const coins=scoreRef.current*5;
+    return(<div style={{textAlign:"center",padding:16}}>
+      <div style={{fontSize:14,fontWeight:900,color:"#2b1d34",marginBottom:6}}>게임 종료!</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginBottom:4}}><PxI n="star" size={22}/><span style={{fontSize:20,fontWeight:900,color:"#d4a030"}}>{scoreRef.current}개</span></div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:3,marginBottom:14}}><PxI n="coin" size={14}/><span style={{fontSize:12,color:"#888"}}>+{coins}</span></div>
+      <button className="btn btn-m" onClick={()=>onEnd(coins)}>확인</button>
+    </div>);
+  }
+  return(<div style={{textAlign:"center"}}>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,padding:"0 4px"}}>
+      <span style={{display:"flex",alignItems:"center",gap:2,fontSize:10,fontWeight:700,color:"#888"}}><PxI n="star" size={12}/>{score}</span>
+      <span style={{fontSize:10,fontWeight:700,color:time<=5?"#ff4d6d":"#888"}}>⏱{time}s</span>
+    </div>
+    <div style={{position:"relative",width:W*20,height:H*20,margin:"0 auto",background:"linear-gradient(180deg,#1a1028,#2a1848)",borderRadius:6,overflow:"hidden",border:"2px solid #3a2a4a"}}>
+      {stars.map(s=><div key={s.id} style={{position:"absolute",left:s.x*20+2,top:s.y*20}}><PxI n="star" size={16}/></div>)}
+      <div style={{position:"absolute",left:pos*20,bottom:0,width:20,height:22,display:"flex",alignItems:"flex-end",justifyContent:"center"}}><PxChar ch={pet} size={18}/></div>
+    </div>
+    <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.max(0,p-1))} style={{padding:"7px 18px"}}>◀</button>
+      <button className="btn btn-s" onClick={()=>setPos(p=>Math.min(W-1,p+1))} style={{padding:"7px 18px"}}>▶</button>
+    </div>
+  </div>);
+}
+
+function MemGame({onEnd}){
+  const ICS=["star","happy","coin","feed","mix","home"];
+  const[cards,setCards]=useState(()=>{const p=[...ICS,...ICS];for(let i=p.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]]}return p.map((e,i)=>({id:i,ic:e,f:false,m:false}))});
+  const[sel,setSel]=useState([]);
+  const[mv,setMv]=useState(0);
+  const[dn,setDn]=useState(false);
+
+  const flip=i=>{
+    if(sel.length>=2||cards[i].f||cards[i].m)return;
+    SFX.cardFlip();
+    const nc=[...cards];nc[i]={...nc[i],f:true};setCards(nc);
+    const ns=[...sel,i];setSel(ns);
+    if(ns.length===2){
+      setMv(m=>m+1);
+      if(nc[ns[0]].ic===nc[ns[1]].ic){
+        setTimeout(()=>{SFX.cardMatch();setCards(p=>{const u=[...p];u[ns[0]]={...u[ns[0]],m:true};u[ns[1]]={...u[ns[1]],m:true};return u});setSel([])},300);
+      }else{
+        setTimeout(()=>{SFX.back();setCards(p=>{const u=[...p];u[ns[0]]={...u[ns[0]],f:false};u[ns[1]]={...u[ns[1]],f:false};return u});setSel([])},600);
+      }
+    }
+  };
+
+  useEffect(()=>{if(cards.every(c=>c.m)&&!dn){setDn(true);SFX.mixDone()}},[cards,dn]);
+
+  if(dn){const coins=Math.max(5,30-mv*2);return(<div style={{textAlign:"center",padding:16}}>
+    <div style={{fontSize:14,fontWeight:900,color:"#2b1d34",marginBottom:6}}>클리어!</div>
+    <div style={{fontSize:12,color:"#888",marginBottom:4}}>{mv}번 만에 성공</div>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:3,marginBottom:14}}><PxI n="coin" size={14}/><span style={{fontSize:12,color:"#888"}}>+{coins}</span></div>
+    <button className="btn btn-m" onClick={()=>onEnd(coins)}>확인</button>
+  </div>)}
+
+  return(<div style={{textAlign:"center"}}>
+    <div style={{fontSize:10,fontWeight:700,color:"#888",marginBottom:4}}>시도: {mv}회</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,maxWidth:192,margin:"0 auto"}}>
+      {cards.map((c,i)=><div key={c.id} onClick={()=>flip(i)} style={{width:42,height:42,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",background:c.m?"rgba(126,212,168,.12)":c.f?"#fff":"linear-gradient(135deg,#3a2a5a,#4a3a6a)",border:c.m?"2px solid #7ed4a8":"2px solid rgba(0,0,0,.06)",opacity:c.m?0.35:1}}>
+        {(c.f||c.m)?<PxI n={c.ic} size={22}/>:<span style={{fontSize:13,color:"rgba(255,255,255,.25)"}}>?</span>}
+      </div>)}
+    </div>
+  </div>);
+}
+
+function RPSGame({pet,onEnd}){
+  const NM=["바위","보","가위"];
+  const[wins,setWins]=useState(0);
+  const[rd,setRd]=useState(0);
+  const[res,setRes]=useState(null);
+  const[pm,setPm]=useState(null);
+  const[mm,setMm]=useState(null);
+  const winsRef=useRef(0);
+
+  const play=me=>{
+    if(res!==null)return;
+    SFX.click();
+    const them=Math.floor(Math.random()*3);
+    setMm(me);setPm(them);
+    const w=(me===0&&them===2)||(me===1&&them===0)||(me===2&&them===1);
+    const dr=me===them;
+    setRes(dr?"무승부":w?"승리!":"패배...");
+    if(w){winsRef.current++;setWins(winsRef.current);setTimeout(()=>SFX.rpsWin(),200)}
+    else if(dr){setTimeout(()=>SFX.rpsDraw(),200)}
+    else{setTimeout(()=>SFX.rpsLose(),200)}
+    setTimeout(()=>{
+      if(rd+1>=5){onEnd(winsRef.current*8)}
+      else{setRd(r=>r+1);setRes(null);setPm(null);setMm(null)}
+    },1000);
+  };
+
+  return(<div style={{textAlign:"center"}}>
+    <div style={{fontSize:10,fontWeight:700,color:"#888",marginBottom:6}}>라운드 {rd+1}/5 · 승리: {wins}</div>
+    <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:16,marginBottom:10}}>
+      <div><PxChar ch={pet} size={44}/><div style={{marginTop:3}}>{pm!==null?<RpsIcon t={pm}/>:<span style={{fontSize:18,opacity:.15}}>?</span>}</div></div>
+      <span style={{fontSize:14,fontWeight:900,color:"#ff4d6d"}}>VS</span>
+      <div><div style={{fontSize:10,fontWeight:800,color:"#2b1d34",marginBottom:2}}>나</div>{mm!==null?<RpsIcon t={mm}/>:<span style={{fontSize:18,opacity:.15}}>?</span>}</div>
+    </div>
+    {res&&<div style={{fontSize:14,fontWeight:900,color:res==="승리!"?"#7ed4a8":res==="패배..."?"#ff4d6d":"#ffd166",marginBottom:6}}>{res}</div>}
+    {!res&&<div style={{display:"flex",gap:6,justifyContent:"center"}}>{[0,1,2].map(i=>
+      <button key={i} className="btn btn-s" onClick={()=>play(i)} style={{padding:"5px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
+        <RpsIcon t={i} sz={26}/><span style={{fontSize:8}}>{NM[i]}</span>
+      </button>
+    )}</div>}
+  </div>);
+}
+
+/* ═══ ROOM DECORATION ITEMS (pixel art) ═══ */
+const RoomDeco=memo(function RoomDeco({type}){
+  const src=useMemo(()=>mkI("deco_"+type,16,16,x=>{
+    switch(type){
+      case"ribbon":
+        x.fillStyle="#ff4d6d";
+        x.fillRect(3,5,4,3);x.fillRect(9,5,4,3);
+        x.fillRect(2,6,2,1);x.fillRect(12,6,2,1);
+        x.fillStyle="#ffd166";x.fillRect(7,5,2,3);
+        x.fillStyle="#d4a030";x.fillRect(7,8,2,4);
+        break;
+      case"glasses":
+        x.fillStyle="#4a9ab8";
+        x.fillRect(1,6,5,4);x.fillRect(10,6,5,4);
+        x.fillRect(2,7,3,2);x.fillRect(11,7,3,2);
+        x.fillStyle="#fff";x.fillRect(2,7,3,2);x.fillRect(11,7,3,2);
+        x.fillStyle="#4a9ab8";
+        x.fillRect(1,6,5,1);x.fillRect(1,9,5,1);x.fillRect(1,6,1,4);x.fillRect(5,6,1,4);
+        x.fillRect(10,6,5,1);x.fillRect(10,9,5,1);x.fillRect(10,6,1,4);x.fillRect(14,6,1,4);
+        x.fillRect(6,7,4,1);
+        break;
+      case"star_deco":
+        x.fillStyle="#ffd166";
+        x.fillRect(7,1,2,2);x.fillRect(6,3,4,1);
+        x.fillRect(3,4,10,2);x.fillRect(4,6,8,1);
+        x.fillRect(5,7,6,1);x.fillRect(4,8,3,1);x.fillRect(9,8,3,1);
+        x.fillRect(3,9,2,1);x.fillRect(11,9,2,1);
+        x.fillStyle="#ffe8a8";x.fillRect(7,3,2,1);x.fillRect(6,4,2,1);
+        x.fillStyle="#d4a030";x.fillRect(7,11,2,4);x.fillRect(6,14,4,1);
+        break;
+      case"heart_deco":
+        x.fillStyle="#ff4d6d";
+        x.fillRect(3,4,3,1);x.fillRect(8,4,3,1);
+        x.fillRect(2,5,4,2);x.fillRect(7,5,5,2);
+        x.fillRect(2,7,10,2);x.fillRect(3,9,8,1);
+        x.fillRect(4,10,6,1);x.fillRect(5,11,4,1);x.fillRect(6,12,2,1);
+        x.fillStyle="#ff8fab";x.fillRect(3,5,2,1);x.fillRect(8,5,2,1);
+        x.fillStyle="#d4a030";x.fillRect(7,13,2,3);
+        break;
+    }
+  }),[type]);
+  return <img src={src} style={{width:28,height:28,imageRendering:"pixelated"}} draggable={false}/>;
+});
+
+/* ═══ HOME SCREEN - Living Room with walking pet ═══ */
+function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petStage,onPetTouch,onRoomTouch,onDrop,runawayWarn}){
+  const[posX,setPosX]=useState(50);
+  const[dir,setDir]=useState(1);
+  const[action,setAction]=useState("walk"); // walk, idle, sleep, jump, spin, sit
+  const[emote,setEmote]=useState(null);
+  const actionTimer=useRef(null);
+  const walkTimer=useRef(null);
+  const roomRef=useRef(null);
+  const[dragItem,setDragItem]=useState(null); // {x,y,type}
+  const[drops,setDrops]=useState([]); // [{id,xPct,type,dist}]
+
+  // Walking behavior
+  useEffect(()=>{
+    const doWalk=()=>{
+      if(sick||action!=="walk")return;
+      setPosX(prev=>{
+        let next=prev+dir*2;
+        if(next>85){setDir(-1);next=85}
+        else if(next<15){setDir(1);next=15}
+        return next;
+      });
+    };
+    walkTimer.current=setInterval(doWalk,300);
+    return()=>clearInterval(walkTimer.current);
+  },[action,dir,sick]);
+
+  // Random idle actions
+  useEffect(()=>{
+    const pickAction=()=>{
+      if(sick){setAction("sit");setEmote("sad");return}
+      const mood=hunger<2?"sad":happy<2?"sad":"happy";
+      const pool=mood==="sad"
+        ?["walk","sit","sit","walk"]
+        :["walk","walk","idle","jump","spin","walk","walk","idle"];
+      const next=pool[Math.floor(Math.random()*pool.length)];
+      setAction(next);
+      if(next==="jump"||next==="spin"){
+        const em=next==="jump"?["note","heart"][Math.floor(Math.random()*2)]:"star";
+        setEmote(em);
+        setTimeout(()=>{setEmote(null);setAction("walk")},1200);
+      } else if(next==="idle"){
+        setTimeout(()=>setAction("walk"),2000);
+      } else if(next==="sit"){
+        if(mood==="sad")setEmote("sad");
+        setTimeout(()=>{setEmote(null);setAction("walk")},3000);
+      }
+    };
+    actionTimer.current=setInterval(pickAction,3000+Math.random()*2000);
+    return()=>clearInterval(actionTimer.current);
+  },[hunger,happy,sick]);
+
+  // Drag & drop treats
+  const TREAT_TYPES=['star','happy','coin'];
+  const handlePointerDown=useCallback((e)=>{
+    if(sick)return;
+    const rect=roomRef.current?.getBoundingClientRect();if(!rect)return;
+    const x=((e.clientX||e.touches?.[0]?.clientX)-rect.left);
+    const y=((e.clientY||e.touches?.[0]?.clientY)-rect.top);
+    const type=TREAT_TYPES[Math.floor(Math.random()*TREAT_TYPES.length)];
+    setDragItem({x,y,type});
+    e.preventDefault();e.stopPropagation();
+  },[sick]);
+  const handlePointerMove=useCallback((e)=>{
+    if(!dragItem)return;
+    const rect=roomRef.current?.getBoundingClientRect();if(!rect)return;
+    const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
+    const y=(e.clientY||e.touches?.[0]?.clientY)-rect.top;
+    setDragItem(d=>d?{...d,x,y}:null);
+    e.preventDefault();
+  },[dragItem]);
+  const handlePointerUp=useCallback((e)=>{
+    if(!dragItem)return;
+    const rect=roomRef.current?.getBoundingClientRect();if(!rect)return;
+    const xPct=Math.max(5,Math.min(95,dragItem.x/rect.width*100));
+    const dist=rect.height-dragItem.y;
+    const id=Date.now();
+    setDrops(d=>[...d,{id,xPct,type:dragItem.type,dist:Math.max(20,dist)}]);
+    setDragItem(null);
+    // Pet runs to catch it
+    setTimeout(()=>{
+      setPosX(xPct);setDir(xPct>posX?1:-1);
+      setAction("jump");setEmote("heart");
+      if(onDrop)onDrop();
+      setTimeout(()=>{setEmote(null);setAction("walk")},1000);
+    },600);
+    setTimeout(()=>setDrops(d=>d.filter(dd=>dd.id!==id)),900);
+  },[dragItem,posX,onDrop]);
+
+  // Pixel room background
+  const roomBg=useMemo(()=>mkI("room",80,50,(x)=>{
+    // Floor
+    x.fillStyle="#e8ddd0";x.fillRect(0,35,80,15);
+    x.fillStyle="#d4c8b8";for(let i=0;i<80;i+=10)x.fillRect(i,35,1,15);
+    x.fillStyle="#f0e8dc";x.fillRect(0,35,80,1);
+    // Wall
+    x.fillStyle="#f8f2ff";x.fillRect(0,0,80,35);
+    // Window
+    x.fillStyle="#c4e8f5";x.fillRect(50,6,20,16);
+    x.fillStyle="#e0d4c8";x.fillRect(49,5,22,1);x.fillRect(49,22,22,1);x.fillRect(49,5,1,18);x.fillRect(70,5,1,18);
+    x.fillRect(59,5,2,18);x.fillRect(49,13,22,2);
+    // Curtain
+    x.fillStyle="#ffcab0";x.fillRect(47,4,4,20);x.fillRect(70,4,4,20);
+    // Cloud through window
+    x.fillStyle="#fff";x.fillRect(54,8,4,2);x.fillRect(53,9,6,1);
+    x.fillStyle="#fff";x.fillRect(63,10,3,1);x.fillRect(62,11,5,1);
+    // Shelf
+    x.fillStyle="#d4c8b8";x.fillRect(6,10,16,2);
+    // Plant on shelf
+    x.fillStyle="#7ed4a8";x.fillRect(8,6,2,4);x.fillRect(10,5,1,5);x.fillRect(12,6,2,4);
+    x.fillStyle="#d06838";x.fillRect(8,10,6,3);x.fillStyle="#ff9a6c";x.fillRect(9,10,4,2);
+    // Photo frame
+    x.fillStyle="#d4a030";x.fillRect(16,5,6,7);x.fillStyle="#fff";x.fillRect(17,6,4,5);
+    x.fillStyle="#ff8fab";x.fillRect(18,7,2,3);
+    // Rug on floor
+    x.fillStyle="#e8c8d8";x.fillRect(25,40,30,6);x.fillStyle="#d4a8c0";x.fillRect(26,41,28,4);
+    x.fillStyle="#ffcab0";x.fillRect(30,42,18,2);
+    // Clock on wall
+    x.fillStyle="#fff";pxC(x,"#fff",38,8,4);x.fillStyle="#d4a030";pxC(x,"#d4a030",38,8,4);pxC(x,"#fff",38,8,3);
+    x.fillStyle="#2b1d34";x.fillRect(38,6,1,3);x.fillRect(38,8,2,1);
+  }),[]);
+
+  const getCharStyle=()=>{
+    const base={position:"absolute",bottom:14,left:`${posX}%`,transform:`translateX(-50%) scaleX(${dir})`,transition:"left .28s linear",imageRendering:"pixelated"};
+    if(sick)return{...base,bottom:10,left:"50%",transform:"translateX(-50%)",transition:"left .5s",filter:"hue-rotate(-15deg) saturate(0.7)"};
+    switch(action){
+      case"jump":return{...base,animation:"petHop .4s ease infinite"};
+      case"spin":return{...base,animation:"petSpin .6s ease"};
+      case"sit":return{...base,bottom:10};
+      case"idle":return{...base,transition:"left .28s linear"};
+      default:return{...base,animation:"petHop .6s ease-in-out infinite"};
+    }
+  };
+
+  return(<div style={{animation:"slideUp .3s ease"}}>
+    {/* Status bar */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4,padding:"0 2px"}}>
+      <div>
+        <div style={{fontSize:8,color:"#b59af8",fontWeight:700}}>{userName}님의 펫 <span style={{color:"#ffd166"}}>{petStage===0?"(아기)":petStage===1?"(꼬마)":""}</span></div>
+        <div style={{fontSize:13,fontWeight:900,color:"#2b1d34"}}>{pet.name}</div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-end"}}>
+        <div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="hunger" size={11}/><StatBar val={hunger} max={5} color="#ff9a6c"/></div>
+        <div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="happy" size={11}/><StatBar val={happy} max={5} color="#ff4d6d"/></div>
+      </div>
+    </div>
+
+    {/* Room */}
+    <div ref={roomRef} onClick={(e)=>{if(!dragItem&&onRoomTouch)onRoomTouch()}}
+      onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={()=>setDragItem(null)}
+      onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}
+      style={{position:"relative",width:"100%",height:"clamp(140px, 28dvh, 190px)",borderRadius:12,overflow:"hidden",background:"#f8f2ff",border:"2px solid rgba(0,0,0,.06)",cursor:"grab",touchAction:"none"}}>
+      {/* BG */}
+      <img src={roomBg} style={{width:"100%",height:"100%",imageRendering:"pixelated",objectFit:"cover"}} draggable={false}/>
+
+      {/* Dragging item */}
+      {dragItem&&<div style={{position:"absolute",left:dragItem.x-12,top:dragItem.y-12,pointerEvents:"none",zIndex:10,transition:"none",filter:"drop-shadow(0 2px 4px rgba(0,0,0,.2))"}}><PxI n={dragItem.type} size={24}/></div>}
+
+      {/* Falling drops */}
+      {drops.map(d=><div key={d.id} style={{position:"absolute",left:`${d.xPct}%`,top:0,transform:"translateX(-50%)",pointerEvents:"none",zIndex:9,"--drop-dist":`${d.dist}px`,animation:`dropFall .8s ease-in forwards`}}><PxI n={d.type} size={20}/></div>)}
+
+      {/* Room decorations from inventory */}
+      {inv.includes("r")&&<div style={{position:"absolute",top:"18%",left:"72%",imageRendering:"pixelated"}}>
+        <RoomDeco type="ribbon"/>
+      </div>}
+      {inv.includes("g")&&<div style={{position:"absolute",top:"25%",left:"12%",imageRendering:"pixelated"}}>
+        <RoomDeco type="glasses"/>
+      </div>}
+      {inv.includes("s")&&<div style={{position:"absolute",top:"10%",left:"42%",imageRendering:"pixelated"}}>
+        <RoomDeco type="star_deco"/>
+      </div>}
+      {inv.includes("h")&&<div style={{position:"absolute",top:"34%",left:"82%",imageRendering:"pixelated"}}>
+        <RoomDeco type="heart_deco"/>
+      </div>}
+
+      {/* Character */}
+      <div onClick={(e)=>{e.stopPropagation();if(onPetTouch)onPetTouch()}} style={getCharStyle()}>
+        <PxChar ch={pet} size={petStage===0?48:petStage===1?64:80}/>
+      </div>
+
+      {/* Emotes */}
+      {emote==="heart"&&<div style={{position:"absolute",bottom:100,left:`${posX}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
+        <div style={{animation:"heartPop 1s ease infinite",color:"#ff4d6d",fontSize:14}}>♥</div>
+      </div>}
+      {emote==="note"&&<div style={{position:"absolute",bottom:105,left:`${posX+5}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
+        <div style={{animation:"noteFloat 1s ease infinite",color:"#b59af8",fontSize:12}}>♪</div>
+      </div>}
+      {emote==="star"&&<div style={{position:"absolute",bottom:100,left:`${posX}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
+        <div style={{animation:"sparkle .8s ease infinite"}}><PxI n="star" size={14}/></div>
+      </div>}
+      {emote==="sad"&&<div style={{position:"absolute",bottom:100,left:`${posX}%`,transform:"translateX(-50%)",pointerEvents:"none"}}>
+        <div style={{animation:"zzz 1.5s ease infinite"}}><PxI n="sweat" size={12}/></div>
+      </div>}
+
+      {/* Hunger/Happy warnings */}
+      {hunger<1.5&&<div style={{position:"absolute",top:8,right:8,animation:"idle 1s ease-in-out infinite"}}><PxI n="sweat" size={18}/></div>}
+      {happy<1.5&&!emote&&<div style={{position:"absolute",top:8,left:8,animation:"idle 1.2s ease-in-out infinite"}}><PxI n="sad" size={18}/></div>}
+
+      {/* Feed message */}
+      {feedMsg&&<div style={{position:"absolute",top:"30%",left:"50%",transform:"translateX(-50%)",fontSize:11,fontWeight:700,color:"#ff4d6d",whiteSpace:"nowrap",animation:"msgFloat 1.2s ease forwards",background:"rgba(255,255,255,.8)",borderRadius:8,padding:"3px 10px"}}>{feedMsg}</div>}
+
+      {/* Runaway warning */}
+      {runawayWarn&&!sick&&<div style={{position:"absolute",bottom:100,left:`${posX}%`,transform:"translateX(-50%)",background:"rgba(255,255,255,.9)",borderRadius:8,padding:"3px 10px",animation:"blink 1s ease infinite",zIndex:3}}>
+        <span style={{fontSize:10,fontWeight:800,color:"#ff4d6d"}}>...</span>
+      </div>}
+
+      {/* Sick overlay */}
+      {sick&&<div style={{position:"absolute",top:6,left:"50%",transform:"translateX(-50%)",display:"flex",alignItems:"center",gap:4,background:"rgba(255,240,240,.92)",borderRadius:8,padding:"3px 10px",animation:"blink 1.5s ease infinite",zIndex:2}}>
+        <PxI n="sick" size={14}/><span style={{fontSize:9,fontWeight:800,color:"#ff4d6d"}}>아파요!</span>
+      </div>}
+    </div>
+
+    {/* Medicine button when sick */}
+    {sick&&onMedicine&&<div style={{textAlign:"center",marginTop:4}}>
+      <button className="btn btn-m" onClick={onMedicine} style={{padding:"6px 16px",fontSize:11,display:"inline-flex",alignItems:"center",gap:4}}>
+        <PxI n="medicine" size={16}/>약 주기
+      </button>
+    </div>}
+
+    {/* Mood text */}
+    <div style={{textAlign:"center",marginTop:sick?3:5,fontSize:9,color:sick?"#ff4d6d":"#bbb"}}>
+      {sick?"아파하고 있어요... 약을 주세요!":hunger<2?"배고파하고 있어요...":happy<2?"심심해하고 있어요...":action==="jump"?"신나게 뛰고 있어요!":action==="spin"?"빙글빙글~!":action==="sit"?"앉아서 쉬고 있어요":"돌아다니는 중..."}
+    </div>
+  </div>);
+}
+
+/* Need StatBar accessible to HomeScreen */
+const StatBar=({val,max,color})=><div style={{display:"flex",gap:1}}>{Array.from({length:max}).map((_,i)=><div key={i} style={{width:8,height:8,borderRadius:2,background:i<Math.ceil(val)?color:"rgba(0,0,0,.05)",border:"1px solid rgba(0,0,0,.03)",transition:"background .3s"}}/>)}</div>;
+
+/* ═══ INTRO ═══ */
+const EGG_COLORS=[
+  {shell:"#ffd6e0",label:"핑크 알",species:[0,1,5]},
+  {shell:"#c4e8f5",label:"파랑 알",species:[1,2,6]},
+  {shell:"#d5ffc4",label:"초록 알",species:[3,4,7]},
+];
+
+function IntroScreen({onComplete,okRef,onLeft,onRight}){
+  const[step,setStep]=useState(0);// 0=title,1=name,2=egg,3=hatch,4=born
+  const[uName,setUName]=useState("");
+  const[eggIdx,setEggIdx]=useState(null);
+  const[crack,setCrack]=useState(0);
+  const[petName,setPetName]=useState("");
+  const[born,setBorn]=useState(null);
+
+  // Register OK action for physical button
+  useEffect(()=>{
+    if(step===0) okRef.current=()=>{SFX.title();setStep(1)};
+    else if(step===1) okRef.current=()=>{if(uName.trim().length>=1){SFX.ok();setStep(2)}};
+    else if(step===2) okRef.current=()=>{if(eggIdx!==null){SFX.ok();setStep(3)}};
+    else if(step===3) okRef.current=null;
+    else if(step===4&&born) okRef.current=()=>{SFX.ok();onComplete({userName:uName.trim(),pet:{...born,name:petName.trim()||born.name}})};
+    return()=>{okRef.current=null};
+  },[step,uName,eggIdx,born,petName]);
+
+  // Register ◀▶ for egg selection
+  useEffect(()=>{
+    if(step===2){
+      onLeft.current=()=>setEggIdx(p=>p===null?2:p<=0?2:p-1);
+      onRight.current=()=>setEggIdx(p=>p===null?0:p>=2?0:p+1);
+    } else {
+      onLeft.current=null;
+      onRight.current=null;
+    }
+    return()=>{onLeft.current=null;onRight.current=null};
+  },[step]);
+
+  useEffect(()=>{
+    if(step!==3)return;
+    const egg=EGG_COLORS[eggIdx];
+    const si=egg.species[Math.floor(Math.random()*egg.species.length)];
+    const ch=makeChar(Date.now(),si);
+    const t1=setTimeout(()=>{setCrack(1);SFX.hatch1()},800);
+    const t2=setTimeout(()=>{setCrack(2);SFX.hatch2()},1600);
+    const t3=setTimeout(()=>{setBorn(ch);setStep(4);SFX.born()},2400);
+    return()=>{clearTimeout(t1);clearTimeout(t2);clearTimeout(t3)};
+  },[step,eggIdx]);
+
+  return(<div style={{textAlign:"center",minHeight:340,display:"flex",flexDirection:"column",justifyContent:"center",padding:"10px 16px"}}>
+    {step===0&&<div style={{animation:"slideUp .5s ease"}}>
+      <div style={{display:"flex",justifyContent:"center",gap:4,marginBottom:10}}>
+        <PxChar ch={BASE[0]} size={44} idle/><PxChar ch={BASE[2]} size={44} idle/><PxChar ch={BASE[4]} size={44} idle/>
+      </div>
+      <div style={{fontSize:26,fontWeight:900,background:"linear-gradient(135deg,#ff4d6d,#b59af8,#7ec8e3)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>믹싱 펫츠</div>
+      <div style={{fontSize:10,fontWeight:700,color:"#b59af8",letterSpacing:3,marginTop:2}}>MIXING PETS</div>
+      <div style={{fontSize:9,color:"#bbb",marginTop:6}}>캐릭터를 믹싱해서 나만의 펫을 키워보세요!</div>
+      <div style={{animation:"blink 1.2s ease infinite",fontSize:12,fontWeight:700,color:"#ff8fab",cursor:"pointer",padding:12,marginTop:12}} onClick={()=>{SFX.title();setStep(1)}}>▶ 터치 또는 OK 버튼</div>
+      <div style={{display:"flex",justifyContent:"center",gap:2,marginTop:8}}>{[3,4,5,6,7].map(i=><PxChar key={i} ch={BASE[i]} size={24}/>)}</div>
+    </div>}
+
+    {step===1&&<div style={{animation:"slideUp .4s ease"}}>
+      <div style={{fontSize:13,fontWeight:900,color:"#2b1d34",marginBottom:4}}>당신의 이름을 알려주세요!</div>
+      <div style={{fontSize:9,color:"#aaa",marginBottom:16}}>펫이 당신을 부를 이름이에요</div>
+      <input type="text" maxLength={8} value={uName} onChange={e=>setUName(e.target.value)} placeholder="이름 입력..." autoFocus
+        style={{width:"100%",maxWidth:200,padding:"10px 14px",borderRadius:12,border:"2px solid rgba(181,154,248,.3)",background:"rgba(255,255,255,.6)",fontSize:16,fontWeight:700,fontFamily:"inherit",textAlign:"center",outline:"none",color:"#2b1d34"}}/>
+      <div style={{marginTop:16}}>
+        <button className="btn btn-m" disabled={uName.trim().length<1} onClick={()=>{SFX.ok();setStep(2)}}>다음</button>
+      </div>
+    </div>}
+
+    {step===2&&<div style={{animation:"slideUp .4s ease"}}>
+      <div style={{fontSize:13,fontWeight:900,color:"#2b1d34",marginBottom:2}}>알을 골라주세요!</div>
+      <div style={{fontSize:9,color:"#aaa",marginBottom:14}}>◀▶ 또는 터치로 선택, OK로 결정</div>
+      <div style={{display:"flex",justifyContent:"center",gap:16,marginBottom:16}}>
+        {EGG_COLORS.map((eg,i)=><div key={i} onClick={()=>{SFX.click();setEggIdx(i)}} style={{cursor:"pointer",padding:"12px 10px 8px",borderRadius:16,background:eggIdx===i?"rgba(255,255,255,.7)":"rgba(255,255,255,.25)",border:eggIdx===i?"2px solid #ff4d6d":"2px solid transparent",transition:"all .2s",transform:eggIdx===i?"translateY(-4px)":"none"}}>
+          <PxEgg color={eg.shell} size={48} shake={eggIdx===i}/>
+          <div style={{fontSize:9,fontWeight:700,color:eggIdx===i?"#ff4d6d":"#999",marginTop:4}}>{eg.label}</div>
+        </div>)}
+      </div>
+      <button className="btn btn-m" disabled={eggIdx===null} onClick={()=>{SFX.ok();setStep(3)}}>이 알로 결정!</button>
+    </div>}
+
+    {step===3&&<div style={{animation:"slideUp .3s ease"}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#888",marginBottom:12}}>알이 움직이고 있어요...!</div>
+      <div style={{position:"relative",display:"inline-block"}}>
+        <PxEgg color={EGG_COLORS[eggIdx].shell} size={80} shake crack={crack}/>
+        {crack>=1&&<div style={{position:"absolute",top:-6,right:-6,animation:"sparkle 1s ease infinite"}}><PxI n="star" size={16}/></div>}
+        {crack>=2&&<div style={{position:"absolute",top:-6,left:-6,animation:"sparkle 1s ease .3s infinite"}}><PxI n="star" size={12}/></div>}
+      </div>
+      <div style={{marginTop:12,display:"flex",gap:3,justifyContent:"center"}}>
+        {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:4,background:i<=crack?"#ff4d6d":"rgba(0,0,0,.08)",transition:"background .3s"}}/>)}
+      </div>
+    </div>}
+
+    {step===4&&born&&<div style={{animation:"slideUp .4s ease"}}>
+      <div style={{fontSize:13,fontWeight:900,color:"#ff4d6d",marginBottom:8}}>짜잔! 새 친구가 태어났어요!</div>
+      <PxChar ch={born} size={120} anim idle/>
+      <div style={{fontSize:9,color:"#aaa",marginTop:8,marginBottom:4}}>이름을 지어주세요!</div>
+      <input type="text" maxLength={6} value={petName} onChange={e=>setPetName(e.target.value)} placeholder={born.name} autoFocus
+        style={{width:"100%",maxWidth:180,padding:"8px 12px",borderRadius:10,border:"2px solid rgba(255,77,109,.2)",background:"rgba(255,255,255,.6)",fontSize:16,fontWeight:700,fontFamily:"inherit",textAlign:"center",outline:"none",color:"#2b1d34"}}/>
+      <div style={{marginTop:12}}>
+        <button className="btn btn-m" onClick={()=>{SFX.ok();onComplete({userName:uName.trim(),pet:{...born,name:petName.trim()||born.name}})}}>키우기 시작!</button>
+      </div>
+    </div>}
+  </div>);
+}
+
+/* ═══ MAIN APP ═══ */
+const SC={HOME:"h",MIX:"mx",MIXING:"mi",RESULT:"r",FEED:"f",GAMES:"g",GP:"gp",SHOP:"s",TREE:"t"};
+
+/* ═══ SAVE / LOAD ═══ */
+const SAVE_KEY='mixingpets_save';
+function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));return d&&d.pet?d:null}catch(e){return null}}
+function writeSave(d){try{localStorage.setItem(SAVE_KEY,JSON.stringify(d))}catch(e){}}
+
+function App(){
+  const saved=useMemo(()=>loadSave(),[]);
+  const[started,setStarted]=useState(!!saved);
+  const[muted,setMuted]=useState(false);
+  const[userName,setUserName]=useState(saved?.userName||"");
+  const[screen,setScreen]=useState(SC.HOME);
+  const[pet,setPet]=useState(saved?.pet||null);
+  const[coins,setCoins]=useState(saved?.coins??50);
+  const[hunger,setHunger]=useState(saved?.hunger??5);
+  const[happy,setHappy]=useState(saved?.happy??5);
+  const[inv,setInv]=useState(saved?.inv||[]);
+  const[history,setHistory]=useState(saved?.history||[]);
+  const[datePartner,setDatePartner]=useState(null);
+  const[dateStage,setDateStage]=useState(0);
+  const[compat,setCompat]=useState(0);
+  const[baby,setBaby]=useState(null);
+  const[baby2,setBaby2]=useState(null);
+  const[progress,setProgress]=useState(0);
+  const[petStage,setPetStage]=useState(saved?.petStage??2);
+  const[gen,setGen]=useState(saved?.gen??1);
+  const[feedMsg,setFeedMsg]=useState(null);
+  const[gt,setGt]=useState(null);
+  const[fTree,setFTree]=useState(saved?.fTree||[]);
+  const[sick,setSick]=useState(saved?.sick||false);
+  const[sickCount,setSickCount]=useState(saved?.sickCount||0);
+  const[dead,setDead]=useState(saved?.dead||false);
+  const[careScore,setCareScore]=useState(saved?.careScore??50);
+  const[runaway,setRunaway]=useState(saved?.runaway||false);
+  const[runawayWarn,setRunawayWarn]=useState(false);
+  const[menuIdx,setMenuIdx]=useState(0);
+  const okRef=useRef(null);  // universal OK action ref
+  const lRef=useRef(null);   // universal left action ref
+  const rRef=useRef(null);   // universal right action ref
+
+  const TABS=[
+    {id:SC.HOME,icon:"home",label:"홈"},
+    {id:SC.FEED,icon:"feed",label:"먹이기"},
+    {id:SC.GAMES,icon:"game",label:"게임"},
+    {id:SC.SHOP,icon:"shop",label:"상점"},
+    {id:SC.MIX,icon:"mix",label:"소개팅"},
+    {id:SC.TREE,icon:"tree",label:"가계도"},
+  ];
+
+  // Register OK/nav actions based on current game screen
+  useEffect(()=>{
+    if(!started)return;
+    // Set OK action based on screen
+    if(screen===SC.HOME) okRef.current=null;
+    else if(screen===SC.RESULT&&baby) okRef.current=()=>keepB();
+    else okRef.current=null;
+
+    if(![SC.GP].includes(screen)){lRef.current=null;rRef.current=null}
+  },[started,screen,baby]);
+
+  // Physical button handlers
+  const btnA=()=>{ // ◀ Left
+    SFX.nav();
+    if(lRef.current){lRef.current();return}
+    if(!started)return;
+    if([SC.MIXING,SC.RESULT,SC.GP].includes(screen))return;
+    setMenuIdx(p=>(p-1+TABS.length)%TABS.length);
+  };
+  const btnB=()=>{ // OK Confirm
+    // First check if any screen registered a custom OK action
+    if(okRef.current){okRef.current();return}
+    // Otherwise, navigate to cursor tab
+    if(!started)return;
+    SFX.ok();
+    if([SC.MIXING,SC.GP].includes(screen))return;
+    const tab=TABS[menuIdx];
+    setScreen(tab.id);
+    if(tab.id===SC.GAMES)setGt(null);
+    if(tab.id===SC.MIX){setDatePartner(null);setDateStage(0)}
+  };
+  const btnC=()=>{ // ▶ Right
+    SFX.nav();
+    if(rRef.current){rRef.current();return}
+    if(!started)return;
+    if([SC.MIXING,SC.RESULT,SC.GP].includes(screen))return;
+    setMenuIdx(p=>(p+1)%TABS.length);
+  };
+
+  // Sync menuIdx when screen changes via touch
+  useEffect(()=>{
+    const idx=TABS.findIndex(t=>t.id===screen);
+    if(idx>=0)setMenuIdx(idx);
+  },[screen]);
+
+  // Keyboard support (desktop)
+  const btnARef=useRef(btnA);btnARef.current=btnA;
+  const btnBRef=useRef(btnB);btnBRef.current=btnB;
+  const btnCRef=useRef(btnC);btnCRef.current=btnC;
+  useEffect(()=>{
+    const handler=(e)=>{
+      if(e.target.tagName==='INPUT')return; // don't capture when typing
+      if(e.key==='ArrowLeft'||e.key==='a'){e.preventDefault();btnARef.current()}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();btnBRef.current()}
+      else if(e.key==='ArrowRight'||e.key==='d'){e.preventDefault();btnCRef.current()}
+    };
+    window.addEventListener('keydown',handler);
+    return()=>window.removeEventListener('keydown',handler);
+  },[]);
+
+  // Auto-save
+  useEffect(()=>{if(!started||!pet)return;writeSave({userName,pet,coins,hunger,happy,inv,history,gen,fTree,sick,sickCount,dead,petStage,careScore,runaway})},[started,pet,userName,coins,hunger,happy,inv,history,gen,fTree,sick,sickCount,dead,petStage,careScore,runaway]);
+
+  useEffect(()=>{if(!started||dead||runaway)return;const r=sick?1.5:1;const iv=setInterval(()=>{setHunger(h=>Math.max(0,h-.15*r));setHappy(h=>Math.max(0,h-.1*r));setCareScore(c=>{let n=c;if(hunger<=0)n-=2;if(happy<=0)n-=1;if(sick)n-=1;return Math.max(0,Math.min(100,n))})},3000);return()=>clearInterval(iv)},[started,dead,sick,runaway]);
+
+  // Sickness: triggers when hunger or happy at 0 for too long
+  const sickTimerRef=useRef(null);
+  useEffect(()=>{
+    if(!started||!pet||dead||sick)return;
+    if(hunger<=0||happy<=0){
+      if(!sickTimerRef.current){
+        sickTimerRef.current=setTimeout(()=>{setSick(true);SFX.sick();sickTimerRef.current=null},12000);
+      }
+    }else{
+      if(sickTimerRef.current){clearTimeout(sickTimerRef.current);sickTimerRef.current=null}
+    }
+    return()=>{if(sickTimerRef.current){clearTimeout(sickTimerRef.current);sickTimerRef.current=null}};
+  },[hunger,happy,started,pet,dead,sick]);
+
+  // Death: if sick too long or 4th sickness
+  const deathTimerRef=useRef(null);
+  useEffect(()=>{
+    if(!started||!pet||dead)return;
+    if(sick){
+      if(sickCount>=3){setDead(true);SFX.angel();return}
+      deathTimerRef.current=setTimeout(()=>{setDead(true);SFX.angel()},45000);
+    }else{
+      if(deathTimerRef.current){clearTimeout(deathTimerRef.current);deathTimerRef.current=null}
+    }
+    return()=>{if(deathTimerRef.current){clearTimeout(deathTimerRef.current);deathTimerRef.current=null}};
+  },[sick,dead,started,pet,sickCount]);
+
+  // Growth stages: 0=baby(2min), 1=toddler(4min), 2=adult with evolution branching
+  useEffect(()=>{
+    if(!started||!pet||dead||runaway||petStage>=2)return;
+    const dur=petStage===0?120000:240000;
+    const t=setTimeout(()=>{
+      if(petStage===0){
+        setPetStage(1);SFX.growUp();setFeedMsg("꼬마로 성장!");setTimeout(()=>setFeedMsg(null),2000);
+      }else{
+        // Evolution branching based on careScore
+        setPet(p=>{
+          const np={...p,pal:{...p.pal}};
+          if(careScore>=70){
+            // Good: add deco if none
+            if(np.deco==="none")np.deco=["crown","halo","flower"][Math.floor(Math.random()*3)];
+            setFeedMsg("행복하게 성장했어요!");
+          }else if(careScore<30){
+            // Bad: grumpy appearance
+            np.eyes=["sleepy","dot"][Math.floor(Math.random()*2)];
+            np.mouth="tiny";
+            setFeedMsg("좀 삐져있는 것 같아요...");
+          }else{
+            setFeedMsg("무사히 성장했어요!");
+          }
+          return np;
+        });
+        setPetStage(2);SFX.growUp();setTimeout(()=>setFeedMsg(null),2500);
+      }
+    },dur);
+    return()=>clearTimeout(t);
+  },[started,pet,dead,runaway,petStage,careScore]);
+
+  // Runaway: triggers when hunger=0 AND happy=0 for 20 seconds
+  const runawayTimerRef=useRef(null);
+  useEffect(()=>{
+    if(!started||!pet||dead||runaway||sick)return;
+    if(hunger<=0&&happy<=0){
+      if(!runawayTimerRef.current){
+        // Warn at 15s, runaway at 20s
+        setTimeout(()=>setRunawayWarn(true),15000);
+        runawayTimerRef.current=setTimeout(()=>{
+          setRunaway(true);setRunawayWarn(false);SFX.runaway();
+          runawayTimerRef.current=null;
+        },20000);
+      }
+    }else{
+      if(runawayTimerRef.current){clearTimeout(runawayTimerRef.current);runawayTimerRef.current=null;setRunawayWarn(false)}
+    }
+    return()=>{if(runawayTimerRef.current){clearTimeout(runawayTimerRef.current);runawayTimerRef.current=null}};
+  },[hunger,happy,started,pet,dead,runaway,sick]);
+
+  const bringBack=useCallback(()=>{
+    if(!runaway||coins<30)return;
+    SFX.ok();setCoins(c=>c-30);setRunaway(false);setRunawayWarn(false);
+    setHunger(1);setHappy(1);setCareScore(c=>Math.max(0,c-10));
+  },[runaway,coins]);
+
+  const giveMedicine=useCallback(()=>{
+    if(!sick||dead)return;SFX.medicine();setSick(false);setSickCount(c=>c+1);
+    setHunger(h=>Math.min(5,h+1));setHappy(h=>Math.min(5,h+1));setCareScore(c=>Math.min(100,c+5));
+  },[sick,dead]);
+
+  const restartGame=useCallback(()=>{
+    localStorage.removeItem(SAVE_KEY);
+    setSick(false);setSickCount(0);setDead(false);
+    setPet(null);setStarted(false);setHunger(5);setHappy(5);
+    setScreen(SC.HOME);setMenuIdx(0);setCoins(50);
+    setHistory([]);setFTree([]);setGen(1);setPetStage(2);
+    setDatePartner(null);setDateStage(0);setBaby(null);setBaby2(null);
+    setCareScore(50);setRunaway(false);setRunawayWarn(false);
+  },[]);
+
+  const feed=useCallback((f)=>{if(coins<f.p)return;SFX.feed();setCoins(c=>c-f.p);setHunger(h=>Math.min(5,h+f.h));setHappy(h=>Math.min(5,h+f.hp));setCareScore(c=>Math.min(100,c+3));setFeedMsg(f.n+" 맛있다!");setTimeout(()=>setFeedMsg(null),1200)},[coins]);
+  const buyAcc=useCallback((a)=>{if(inv.includes(a.id)||coins<a.p)return;SFX.buy();setCoins(c=>c-a.p);setInv(p=>[...p,a.id])},[coins,inv]);
+  const onGE=useCallback(earned=>{SFX.buy();setCoins(c=>c+earned);setHappy(h=>Math.min(5,h+1));setCareScore(c=>Math.min(100,c+5));setScreen(SC.GAMES);setGt(null)},[]);
+
+  // Blind date functions
+  const goDate=useCallback(()=>{
+    if(coins<10||petStage<2||sick||dead)return;
+    SFX.ok();setCoins(c=>c-10);
+    const p=generatePartner(history);
+    setDatePartner(p);setCompat(calcCompatibility(pet,p));setDateStage(1);
+    setTimeout(()=>setDateStage(2),1500);SFX.dateReveal();
+  },[coins,petStage,sick,dead,history,pet]);
+
+  const rerollDate=useCallback(()=>{
+    if(coins<20)return;SFX.dateReject();setCoins(c=>c-20);
+    const p=generatePartner(history);
+    setDatePartner(p);setCompat(calcCompatibility(pet,p));setDateStage(1);
+    setTimeout(()=>setDateStage(2),1500);SFX.dateReveal();
+  },[coins,history,pet]);
+
+  const acceptDate=useCallback(()=>{
+    if(!datePartner||sick||dead)return;SFX.dateAccept();
+    setDateStage(3);setScreen(SC.MIXING);setProgress(0);
+    const iv=setInterval(()=>setProgress(p=>{if(p>=100){clearInterval(iv);return 100}return p+2}),30);
+    setTimeout(()=>{
+      const b=mixChars(pet,datePartner);
+      const isTwin=Math.random()<0.08;
+      const b2=isTwin?mixChars(pet,datePartner):null;
+      setBaby(b);setBaby2(b2);setScreen(SC.RESULT);
+      setGen(g=>{
+        const entries=[{child:b.name,p1:pet.name,p2:datePartner.name,gen:g+1,twin:!!b2}];
+        if(b2)entries.push({child:b2.name,p1:pet.name,p2:datePartner.name,gen:g+1,twin:true});
+        setFTree(t=>[...t,...entries]);return g+1;
+      });
+      SFX.mixDone();
+    },2000);
+  },[pet,datePartner,sick,dead]);
+
+  const keepB=useCallback((chosen)=>{
+    SFX.happy();
+    const pick=chosen||baby;
+    const other=chosen?(chosen===baby?baby2:baby):baby2;
+    if(pick){setHistory(h=>[...h,pick,...(other?[other]:[])]);setPet(pick)}
+    setBaby(null);setBaby2(null);setDatePartner(null);setDateStage(0);
+    setScreen(SC.HOME);setHunger(5);setHappy(5);setPetStage(0);setSick(false);setSickCount(0);setCareScore(50);setRunaway(false);
+  },[baby,baby2]);
+
+  // Touch interactions
+  const lastTouchRef=useRef(0);
+  const touchCountRef=useRef(0);
+  const touchTimerRef=useRef(null);
+
+  const handlePetTouch=useCallback(()=>{
+    if(sick||dead||runaway)return;
+    const now=Date.now();
+    // Track rapid touches for tickle
+    touchCountRef.current++;
+    if(touchTimerRef.current)clearTimeout(touchTimerRef.current);
+    touchTimerRef.current=setTimeout(()=>{touchCountRef.current=0},2000);
+
+    if(touchCountRef.current>=3&&now-lastTouchRef.current<2000){
+      // Tickle! (3+ rapid touches)
+      SFX.tickle();setHappy(h=>Math.min(5,h+0.5));setCareScore(c=>Math.min(100,c+3));
+      setFeedMsg("간지러워~!");setTimeout(()=>setFeedMsg(null),1200);
+      touchCountRef.current=0;lastTouchRef.current=now+5000; // 5s cooldown
+    }else if(now>lastTouchRef.current){
+      // Pet (normal touch)
+      SFX.pet();setHappy(h=>Math.min(5,h+0.3));setCareScore(c=>Math.min(100,c+2));
+      setFeedMsg("좋아해요!");setTimeout(()=>setFeedMsg(null),1200);
+      lastTouchRef.current=now+3000; // 3s cooldown
+    }
+  },[sick,dead,runaway]);
+
+  const handleRoomTouch=useCallback(()=>{
+    if(sick||dead||runaway)return;
+    const now=Date.now();
+    if(now<=lastTouchRef.current)return;
+    SFX.click();
+    if(Math.random()<0.1){
+      setHappy(h=>Math.min(5,h+0.3));setFeedMsg("놀랐지만 좋아!");
+    }else{
+      setHappy(h=>Math.max(0,h-0.2));setFeedMsg("깜짝이야!");
+    }
+    setTimeout(()=>setFeedMsg(null),1200);
+    lastTouchRef.current=now+2000;
+  },[sick,dead,runaway]);
+
+  const handleDrop=useCallback(()=>{
+    if(sick||dead||runaway)return;
+    SFX.pet();setHappy(h=>Math.min(5,h+0.3));setCareScore(c=>Math.min(100,c+2));
+  },[sick,dead,runaway]);
+
+  const Back=({to})=><button onClick={()=>{setScreen(to);if(to===SC.GAMES)setGt(null);if(to===SC.HOME){setDatePartner(null);setDateStage(0)}}} style={{background:"none",border:"none",cursor:"pointer",padding:"4px",fontSize:14,color:"#888"}}>‹</button>;
+  const MenuBtn=({icon,label,to,idx})=>{
+    const isActive=screen===to;
+    const isCursor=menuIdx===idx;
+    return <button onClick={()=>{SFX.click();setScreen(to);setMenuIdx(idx);if(to===SC.GAMES)setGt(null);if(to===SC.MIX){setDatePartner(null);setDateStage(0)}}} style={{flex:1,background:isActive?"rgba(181,154,248,.1)":isCursor?"rgba(255,209,102,.12)":"none",border:"none",borderRadius:8,padding:"4px 1px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:0,position:"relative"}}>
+      {isCursor&&!isActive&&<div style={{position:"absolute",top:-1,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"4px solid transparent",borderRight:"4px solid transparent",borderTop:"4px solid #ffd166"}}/>}
+      <PxI n={icon} size={isActive?19:isCursor?19:16}/>
+      <div style={{fontSize:7,fontWeight:700,color:isActive?"#b59af8":isCursor?"#d4a030":"#aaa"}}>{label}</div>
+    </button>;
+  };
+
+  return(
+    <div className="device">
+      {/* Keychain ring */}
+      <div className="device-ring"></div>
+
+      {/* Device body */}
+      <div className="device-body">
+
+        {/* Top area: logo + coins */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,padding:"0 4px"}}>
+          <div style={{fontSize:12,fontWeight:900,color:"rgba(255,255,255,.55)",letterSpacing:1}}>MIXING PETS</div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}>
+            {started&&<><PxI n="coin" size={12}/><span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.5)"}}>{coins}</span>
+            <span style={{fontSize:7,color:"rgba(255,255,255,.25)"}}>Gen.{gen}</span></>}
+            <button onClick={()=>{const m=SFX.toggleMute();setMuted(m)}} style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:muted?0.3:0.7,transition:"opacity .2s"}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" style={{imageRendering:"pixelated"}}>
+                <rect x="1" y="4" width="3" height="6" fill="rgba(255,255,255,.6)"/>
+                <polygon points="4,4 8,1 8,13 4,10" fill="rgba(255,255,255,.6)"/>
+                {!muted&&<><rect x="10" y="3" width="1" height="2" fill="rgba(255,255,255,.5)"/><rect x="10" y="9" width="1" height="2" fill="rgba(255,255,255,.5)"/><rect x="11" y="5" width="1" height="4" fill="rgba(255,255,255,.5)"/></>}
+                {muted&&<><line x1="10" y1="4" x2="13" y2="10" stroke="rgba(255,255,255,.6)" strokeWidth="1.5"/><line x1="13" y1="4" x2="10" y2="10" stroke="rgba(255,255,255,.6)" strokeWidth="1.5"/></>}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Faceplate (decorative border around screen) */}
+        <div className="device-faceplate">
+          {/* Screen */}
+          <div className="scr">
+            <div className="scr-in">
+              {!started&&<IntroScreen onComplete={({userName:u,pet:p})=>{setUserName(u);setPet(p);setStarted(true);setPetStage(0)}} okRef={okRef} onLeft={lRef} onRight={rRef}/>}
+
+              {started&&pet&&dead&&<div style={{textAlign:"center",padding:"16px 10px",animation:"slideUp .5s ease"}}>
+                <div style={{fontSize:9,color:"#bbb",marginBottom:6,letterSpacing:2}}>R.I.P</div>
+                <div style={{position:"relative",display:"inline-block",marginBottom:10}}>
+                  <div style={{opacity:.45,filter:"grayscale(60%)"}}><PxChar ch={pet} size={90}/></div>
+                  <div style={{position:"absolute",top:-14,left:"50%",transform:"translateX(-50%)",animation:"zzz 2s ease infinite",pointerEvents:"none"}}><PxI n="star" size={18}/></div>
+                  <div style={{position:"absolute",top:-8,left:"30%",animation:"zzz 2.5s ease .5s infinite",pointerEvents:"none"}}><PxI n="star" size={12}/></div>
+                </div>
+                <div style={{fontSize:14,fontWeight:900,color:"#2b1d34",marginBottom:4}}>{pet.name}</div>
+                <div style={{fontSize:10,color:"#999",marginBottom:3}}>하늘나라로 떠났어요...</div>
+                <div style={{fontSize:8,color:"#bbb",marginBottom:14}}>Gen.{gen} · 믹스 {fTree.length}회</div>
+                <button className="btn btn-m" onClick={restartGame}>새 알 키우기</button>
+              </div>}
+
+              {started&&pet&&!dead&&runaway&&<div style={{textAlign:"center",padding:"16px 10px",animation:"slideUp .5s ease"}}>
+                <div style={{position:"relative",width:"100%",height:120,borderRadius:12,overflow:"hidden",background:"#f8f2ff",border:"2px solid rgba(0,0,0,.06)",marginBottom:10}}>
+                  <img src={mkI("emptyroom",80,50,(x)=>{x.fillStyle="#e8ddd0";x.fillRect(0,35,80,15);x.fillStyle="#d4c8b8";for(let i=0;i<80;i+=10)x.fillRect(i,35,1,15);x.fillStyle="#f0e8dc";x.fillRect(0,35,80,1);x.fillStyle="#f8f2ff";x.fillRect(0,0,80,35);x.fillStyle="#c4e8f5";x.fillRect(50,6,20,16);x.fillStyle="#e0d4c8";x.fillRect(49,5,22,1);x.fillRect(49,22,22,1);x.fillRect(49,5,1,18);x.fillRect(70,5,1,18);x.fillRect(59,5,2,18);x.fillRect(49,13,22,2)})} style={{width:"100%",height:"100%",imageRendering:"pixelated",objectFit:"cover"}} draggable={false}/>
+                </div>
+                <div style={{fontSize:14,fontWeight:900,color:"#2b1d34",marginBottom:4}}>{pet.name}</div>
+                <div style={{fontSize:10,color:"#999",marginBottom:12}}>집을 나가버렸어요...</div>
+                <div style={{display:"flex",gap:6,justifyContent:"center"}}>
+                  <button className="btn btn-m" onClick={bringBack} disabled={coins<30} style={{display:"inline-flex",alignItems:"center",gap:3}}>
+                    데려오기 <span style={{fontSize:9,opacity:.7}}>30<PxI n="coin" size={9}/></span>
+                  </button>
+                  <button className="btn btn-s" onClick={restartGame}>보내주기</button>
+                </div>
+              </div>}
+
+              {started&&pet&&!dead&&!runaway&&<>
+                {screen===SC.HOME&&<HomeScreen pet={pet} hunger={hunger} happy={happy} feedMsg={feedMsg} userName={userName} inv={inv} sick={sick} onMedicine={giveMedicine} petStage={petStage} onPetTouch={handlePetTouch} onRoomTouch={handleRoomTouch} onDrop={handleDrop} runawayWarn={runawayWarn}/>}
+
+                {screen===SC.FEED&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>먹이기</span></div>
+                  <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:7}}><PxChar ch={pet} size={46} idle/><div style={{display:"flex",flexDirection:"column",gap:2,justifyContent:"center"}}><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="hunger" size={11}/><StatBar val={hunger} max={5} color="#ff9a6c"/></div><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="happy" size={11}/><StatBar val={happy} max={5} color="#ff4d6d"/></div></div></div>
+                  {FOODS.map(f=><div key={f.id} className="item" onClick={()=>feed(f)} style={{opacity:(coins<f.p?0.3:1)}}><FoodI t={f.id} size={22}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div><div style={{fontSize:7,color:"#aaa"}}>{f.h>0?`배부름+${f.h} `:""}{f.hp>0?`행복+${f.hp}`:""}</div></div><div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{f.p}</span></div></div>)}
+                </div>}
+
+                {screen===SC.GAMES&&!gt&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>미니게임</span></div>
+                  {[{t:"catch",n:"별 잡기",d:"떨어지는 별을 잡아요!",ic:"star",r:"별당 5코인"},{t:"memory",n:"카드 매칭",d:"같은 그림 짝을 맞춰요!",ic:"cards",r:"최대 30코인"},{t:"rps",n:"가위바위보",d:"5판 승부!",ic:"rps",r:"승리당 8코인"}].map(g=><div key={g.t} className="item" onClick={()=>{setGt(g.t);setScreen(SC.GP)}} style={{marginBottom:3}}><PxI n={g.ic} size={28}/><div style={{flex:1}}><div style={{fontSize:11,fontWeight:800,color:"#2b1d34"}}>{g.n}</div><div style={{fontSize:8,color:"#aaa"}}>{g.d}</div></div><span style={{fontSize:7,fontWeight:700,color:"#7ed4a8"}}>{g.r}</span></div>)}
+                </div>}
+
+                {screen===SC.GP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.GAMES}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>{gt==="catch"?"별 잡기":gt==="memory"?"카드 매칭":"가위바위보"}</span></div>
+                  {gt==="catch"&&<StarGame pet={pet} onEnd={onGE}/>}{gt==="memory"&&<MemGame onEnd={onGE}/>}{gt==="rps"&&<RPSGame pet={pet} onEnd={onGE}/>}
+                </div>}
+
+                {screen===SC.SHOP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>상점</span><div style={{flex:1}}/><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="coin" size={12}/><span style={{fontSize:10,fontWeight:700,color:"#d4a030"}}>{coins}</span></div></div>
+                  <div className="sec">액세서리</div>
+                  {ACCS.map(a=>{const ow=inv.includes(a.id);return<div key={a.id} className="item" onClick={()=>buyAcc(a)} style={{opacity:(ow?0.4:(coins<a.p?0.3:1))}}><RoomDeco type={a.deco}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{a.n}</div><div style={{fontSize:7,color:"#aaa"}}>{ow?"보유 중 · 방에 배치됨":a.desc}</div></div>{!ow&&<div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{a.p}</span></div>}{ow&&<span style={{fontSize:9,color:"#7ed4a8",fontWeight:800}}>✓</span>}</div>})}
+                  <div className="sec">음식</div>
+                  {FOODS.map(f=><div key={f.id} className="item" onClick={()=>feed(f)} style={{opacity:(coins<f.p?0.3:1)}}><FoodI t={f.id} size={20}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div></div><div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{f.p}</span></div></div>)}
+                </div>}
+
+                {screen===SC.MIX&&<div style={{animation:"slideUp .3s ease"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>소개팅</span></div>
+
+                  {petStage<2&&<div style={{textAlign:"center",padding:"30px 10px"}}>
+                    <PxChar ch={pet} size={60} idle/>
+                    <div style={{fontSize:11,fontWeight:700,color:"#888",marginTop:8}}>아직 어려요!</div>
+                    <div style={{fontSize:9,color:"#bbb",marginTop:3}}>더 자라야 소개팅을 갈 수 있어요</div>
+                    <div style={{marginTop:8,display:"flex",gap:3,justifyContent:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:24,height:4,borderRadius:2,background:i<=petStage?"#ff4d6d":"rgba(0,0,0,.08)"}}/>)}</div>
+                    <div style={{fontSize:8,color:"#bbb",marginTop:4}}>{petStage===0?"아기":"꼬마"} → {petStage===0?"꼬마 → 성체":"성체"}</div>
+                  </div>}
+
+                  {petStage>=2&&dateStage===0&&<div style={{textAlign:"center",padding:"16px 10px"}}>
+                    <PxChar ch={pet} size={70} idle/>
+                    <div style={{fontSize:12,fontWeight:800,color:"#2b1d34",marginTop:6}}>소개팅을 가볼까요?</div>
+                    <div style={{fontSize:9,color:"#bbb",marginTop:3}}>랜덤 상대를 만나 새 친구를 만들어요!</div>
+                    <div style={{marginTop:12}}>
+                      <button className="btn btn-m" onClick={goDate} disabled={coins<10} style={{display:"inline-flex",alignItems:"center",gap:4}}>
+                        <PxI n="mix" size={14}/>만나러 가기 <span style={{fontSize:9,opacity:.7}}>10<PxI n="coin" size={9}/></span>
+                      </button>
+                    </div>
+                    {history.length>0&&<div style={{fontSize:8,color:"#bbb",marginTop:10}}>지금까지 {history.length}마리 만남!</div>}
+                  </div>}
+
+                  {petStage>=2&&dateStage===1&&datePartner&&<div style={{textAlign:"center",padding:"14px 10px"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#888",marginBottom:8}}>두근두근... 상대가 나타나고 있어요!</div>
+                    <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:16}}>
+                      <div><PxChar ch={pet} size={50} idle/><div style={{fontSize:8,fontWeight:700,color:"#2b1d34",marginTop:2}}>{pet.name}</div></div>
+                      <div style={{animation:"heartPop 1s ease infinite"}}><PxI n="mix" size={22}/></div>
+                      <div style={{filter:"brightness(0)",opacity:.3,animation:"popIn .8s ease"}}><PxChar ch={datePartner} size={50}/><div style={{fontSize:8,color:"#bbb",marginTop:2}}>???</div></div>
+                    </div>
+                  </div>}
+
+                  {petStage>=2&&dateStage===2&&datePartner&&<div style={{textAlign:"center",padding:"8px 10px",animation:"slideUp .3s ease"}}>
+                    <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:14,marginBottom:8}}>
+                      <div><PxChar ch={pet} size={48} idle/><div style={{fontSize:8,fontWeight:700,color:"#2b1d34",marginTop:2}}>{pet.name}</div></div>
+                      <div><PxI n="mix" size={18}/></div>
+                      <div style={{animation:"popIn .4s ease"}}><PxChar ch={datePartner} size={48} idle/><div style={{fontSize:8,fontWeight:700,color:"#2b1d34",marginTop:2}}>{datePartner.name}</div></div>
+                    </div>
+                    <div style={{marginBottom:6}}>
+                      <div style={{fontSize:9,fontWeight:700,color:"#ff4d6d",marginBottom:3}}>궁합 {compat}%</div>
+                      <div style={{display:"flex",gap:1,justifyContent:"center"}}>{Array.from({length:10}).map((_,i)=><div key={i} style={{width:12,height:6,borderRadius:2,background:i<Math.round(compat/10)?"#ff4d6d":"rgba(0,0,0,.06)"}}/>)}</div>
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:2,marginBottom:8}}><span className="tag">{datePartner.species}</span><span className="tag">{datePartner.eyes}눈</span>{datePartner.deco!=="none"&&<span className="tag">{datePartner.deco}</span>}</div>
+                    <div style={{display:"flex",gap:6,justifyContent:"center"}}>
+                      <button className="btn btn-m" onClick={acceptDate}>좋아요!</button>
+                      <button className="btn btn-s" onClick={rerollDate} disabled={coins<20}>다른 친구 <span style={{fontSize:8}}>20<PxI n="coin" size={8}/></span></button>
+                    </div>
+                  </div>}
+                </div>}
+
+                {screen===SC.MIXING&&datePartner&&<div style={{textAlign:"center",padding:"28px 0",animation:"slideUp .3s ease"}}>
+                  <div style={{position:"relative",width:140,height:140,margin:"0 auto 12px"}}><div style={{position:"absolute",left:"50%",top:"50%",marginLeft:-20,marginTop:-22,animation:"orbit1 1.4s linear infinite"}}><PxChar ch={pet} size={40}/></div><div style={{position:"absolute",left:"50%",top:"50%",marginLeft:-20,marginTop:-22,animation:"orbit2 1.4s linear infinite"}}><PxChar ch={datePartner} size={40}/></div><div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",animation:"eggShake .3s ease infinite"}}><PxEgg size={50} shake/></div></div>
+                  <div style={{width:140,height:5,background:"rgba(0,0,0,.06)",borderRadius:3,margin:"0 auto",overflow:"hidden"}}><div style={{width:`${progress}%`,height:"100%",borderRadius:3,background:"linear-gradient(90deg,#ff4d6d,#b59af8,#7ec8e3)",animation:"barGlow 2s linear infinite"}}/></div>
+                  <div style={{marginTop:7,fontSize:10,color:"#aaa",fontWeight:700}}>유전자 믹싱 중...</div>
+                </div>}
+
+                {screen===SC.RESULT&&baby&&<div style={{textAlign:"center",padding:"8px 0",animation:"slideUp .3s ease",position:"relative"}}>
+                  {Array.from({length:6}).map((_,i)=><div key={i} style={{position:"absolute",left:`${15+Math.random()*70}%`,top:`${5+Math.random()*50}%`,animation:`sparkle ${.7+Math.random()*.5}s ease ${Math.random()}s infinite`,pointerEvents:"none"}}><PxI n="star" size={8+Math.random()*8}/></div>)}
+                  <div style={{fontSize:11,color:"#999",fontWeight:700,marginBottom:6}}>{baby2?"쌍둥이가 태어났어요!":"새 친구가 태어났어요!"}</div>
+                  {!baby2&&<div>
+                    <div style={{display:"inline-block",background:"rgba(255,255,255,.5)",borderRadius:16,padding:"12px 20px 10px",animation:"pulse 2s ease infinite"}}><PxChar ch={baby} size={100} anim idle/><div style={{fontSize:17,fontWeight:900,color:"#2b1d34",marginTop:3}}>{baby.name}</div><div style={{marginTop:2,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:2}}><span className="tag">{baby.species}</span><span className="tag">{baby.eyes}눈</span>{baby.deco!=="none"&&<span className="tag">{baby.deco}</span>}</div>{baby.parents&&<div style={{fontSize:7,color:"#bbb",marginTop:3}}>{baby.parents[0]} × {baby.parents[1]}</div>}</div>
+                    <div style={{marginTop:10}}><button className="btn btn-m" onClick={()=>keepB()}>키우기</button></div>
+                  </div>}
+                  {baby2&&<div>
+                    <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:6}}>
+                      {[baby,baby2].map((b,i)=><div key={i} style={{background:"rgba(255,255,255,.5)",borderRadius:14,padding:"8px 12px 6px",cursor:"pointer",border:"2px solid transparent",transition:"all .15s"}} onClick={()=>keepB(b)}>
+                        <PxChar ch={b} size={60} anim idle/><div style={{fontSize:12,fontWeight:900,color:"#2b1d34",marginTop:2}}>{b.name}</div>
+                        <div style={{marginTop:1,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:1}}><span className="tag" style={{fontSize:7}}>{b.species}</span></div>
+                      </div>)}
+                    </div>
+                    <div style={{fontSize:9,color:"#888"}}>키울 아이를 선택하세요!</div>
+                  </div>}
+                </div>}
+
+                {screen===SC.TREE&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>가계도</span></div>
+                  {fTree.length===0?<div style={{textAlign:"center",padding:30,color:"#bbb",fontSize:10}}>아직 소개팅 기록이 없어요!<br/>소개팅으로 새 친구를 만들어보세요.</div>:
+                  <div style={{display:"flex",flexDirection:"column",gap:5}}>{fTree.map((f,i)=><div key={i} style={{background:"rgba(255,255,255,.4)",borderRadius:9,padding:"7px 9px"}}><div style={{fontSize:7,fontWeight:700,color:"#b59af8",marginBottom:2}}>Gen.{f.gen+1}</div><div style={{display:"flex",alignItems:"center",gap:3,justifyContent:"center",flexWrap:"wrap"}}><span style={{background:"rgba(255,143,171,.08)",borderRadius:5,padding:"2px 7px",fontSize:9,fontWeight:700,color:"#ff4d6d"}}>{f.p1}</span><span style={{fontSize:8,color:"#ccc"}}>×</span><span style={{background:"rgba(126,200,227,.08)",borderRadius:5,padding:"2px 7px",fontSize:9,fontWeight:700,color:"#7ec8e3"}}>{f.p2}</span><span style={{fontSize:8,color:"#ccc"}}>→</span><span style={{background:"rgba(255,209,102,.12)",borderRadius:5,padding:"2px 7px",fontSize:9,fontWeight:800,color:"#d4a030"}}>{f.child}</span></div></div>)}</div>}
+                </div>}
+              </>}
+            </div>
+
+            {/* Nav menu inside screen bottom */}
+            {started&&!dead&&!runaway&&![SC.MIXING,SC.RESULT,SC.GP].includes(screen)&&(
+              <div className="menu">
+                {TABS.map((t,i)=><MenuBtn key={t.id} icon={t.icon} label={t.label} to={t.id} idx={i}/>)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Physical buttons */}
+        <div className="device-btns">
+          <button className="device-btn a" onClick={btnA}>
+            <svg width="12" height="12" viewBox="0 0 12 12" style={{imageRendering:"pixelated"}}>
+              <rect x="4" y="2" width="2" height="8" fill="rgba(255,255,255,.6)"/>
+              <rect x="2" y="4" width="2" height="4" fill="rgba(255,255,255,.6)"/>
+              <rect x="6" y="2" width="2" height="8" fill="rgba(255,255,255,.3)"/>
+            </svg>
+          </button>
+          <button className="device-btn b" style={{width:34,height:34}} onClick={btnB}>
+            <svg width="14" height="14" viewBox="0 0 14 14" style={{imageRendering:"pixelated"}}>
+              <rect x="3" y="3" width="8" height="8" rx="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="2"/>
+              <rect x="5" y="5" width="4" height="4" fill="rgba(255,255,255,.5)"/>
+            </svg>
+          </button>
+          <button className="device-btn c" onClick={btnC}>
+            <svg width="12" height="12" viewBox="0 0 12 12" style={{imageRendering:"pixelated"}}>
+              <rect x="4" y="2" width="2" height="8" fill="rgba(255,255,255,.3)"/>
+              <rect x="6" y="2" width="2" height="8" fill="rgba(255,255,255,.6)"/>
+              <rect x="8" y="4" width="2" height="4" fill="rgba(255,255,255,.6)"/>
+            </svg>
+          </button>
+        </div>
+        <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:3}}>
+          <span style={{fontSize:7,fontWeight:800,color:"rgba(255,255,255,.3)",letterSpacing:1}}>◀</span>
+          <span style={{fontSize:7,fontWeight:800,color:"rgba(255,255,255,.35)",letterSpacing:1}}>OK</span>
+          <span style={{fontSize:7,fontWeight:800,color:"rgba(255,255,255,.3)",letterSpacing:1}}>▶</span>
+        </div>
+        <div className="device-label">MIXING PETS</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
