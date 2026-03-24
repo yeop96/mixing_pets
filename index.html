@@ -174,6 +174,7 @@ function PxI({n,size=24}){
       case"sad":x.fillStyle="#7ec8e3";x.fillRect(4,8,2,3);x.fillRect(10,8,2,3);break;
       case"medicine":x.fillStyle="#ff4d6d";x.fillRect(6,2,4,12);x.fillRect(2,6,12,4);x.fillStyle="#fff";x.fillRect(7,3,2,10);x.fillRect(3,7,10,2);break;
       case"sick":x.fillStyle="#ffd166";x.fillRect(7,1,2,10);x.fillRect(6,11,4,2);pxC(x,"#ff4d6d",8,13,2);x.fillStyle="#ff4d6d";x.fillRect(6,4,1,3);break;
+      case"fridge":x.fillStyle="#c4e8f5";x.fillRect(4,2,8,12);x.fillStyle="#a0d0e4";x.fillRect(4,2,8,1);x.fillRect(4,8,8,1);x.fillStyle="#fff";x.fillRect(6,4,4,3);x.fillRect(6,10,4,2);x.fillStyle="#888";x.fillRect(11,5,1,2);x.fillRect(11,10,1,1);break;
       case"settings":pxC(x,"#888",8,8,5);pxC(x,"#bbb",8,8,3);pxC(x,"#888",8,8,2);x.fillStyle="#888";x.fillRect(7,1,2,3);x.fillRect(7,12,2,3);x.fillRect(1,7,3,2);x.fillRect(12,7,3,2);break;
       case"poop":x.fillStyle="#8B6914";pxC(x,"#8B6914",8,10,4);pxC(x,"#8B6914",8,7,3);pxC(x,"#8B6914",8,5,2);x.fillStyle="#a07820";pxC(x,"#a07820",7,9,2);pxC(x,"#a07820",7,6,1);break;
       case"bath":x.fillStyle="#7ec8e3";x.fillRect(2,8,12,5);x.fillRect(3,7,10,1);x.fillStyle="#b8e4f0";x.fillRect(3,8,10,3);x.fillStyle="#fff";x.fillRect(4,6,2,2);x.fillRect(7,5,2,2);x.fillRect(10,6,2,2);break;
@@ -306,7 +307,11 @@ function PxEgg({color="#ffd6e0",size=60,shake=false,crack=0}){
 }
 
 /* ═══ GAME DATA ═══ */
-const FOODS=[{id:"rice",n:"주먹밥",p:10,h:2,hp:0},{id:"curry",n:"카레",p:20,h:3,hp:1},{id:"steak",n:"스테이크",p:40,h:4,hp:2},{id:"cake",n:"케이크",p:15,h:0,hp:3},{id:"candy",n:"사탕",p:5,h:0,hp:2},{id:"icecream",n:"아이스크림",p:12,h:0,hp:3}];
+const FOODS=[{id:"rice",n:"주먹밥",p:0,h:2,hp:0,cat:"meal"},{id:"curry",n:"카레",p:20,h:3,hp:1,cat:"meal"},{id:"steak",n:"스테이크",p:40,h:4,hp:2,cat:"meal"},{id:"cake",n:"케이크",p:15,h:0,hp:3,cat:"snack"},{id:"candy",n:"사탕",p:5,h:0,hp:2,cat:"snack"},{id:"icecream",n:"아이스크림",p:12,h:0,hp:3,cat:"snack"}];
+const MEALS=FOODS.filter(f=>f.cat==="meal");
+const SNACKS=FOODS.filter(f=>f.cat==="snack");
+const FRIDGE_MAX=3;
+const defaultFridge=()=>({rice:1,curry:0,steak:0,cake:0,candy:0,icecream:0});
 const ACCS=[{id:"r",n:"리본",p:50,deco:"ribbon",desc:"벽에 거는 귀여운 리본"},{id:"g",n:"안경",p:80,deco:"glasses",desc:"선반에 올려두는 안경"},{id:"s",n:"별 배지",p:30,deco:"star_deco",desc:"벽에 빛나는 별 장식"},{id:"h",n:"하트 목걸이",p:100,deco:"heart_deco",desc:"벽에 거는 하트 오너먼트"}];
 
 /* ═══ MINI-GAMES (bugs fixed) ═══ */
@@ -516,7 +521,8 @@ const RoomDeco=memo(function RoomDeco({type}){
 });
 
 /* ═══ HOME SCREEN - Living Room with walking pet ═══ */
-function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petStage,onPetTouch,onRoomTouch,runawayWarn,poop,dirty,sleeping,onClean,onBath,onSleep}){
+function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petStage,onPetTouch,onRoomTouch,runawayWarn,poop,dirty,sleeping,onClean,onBath,onSleep,fridge,onFeed}){
+  const[showFridge,setShowFridge]=useState(false);
   const[posX,setPosX]=useState(50);
   const[dir,setDir]=useState(1);
   const[action,setAction]=useState("walk"); // walk, idle, sleep, jump, spin, sit
@@ -623,7 +629,7 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
     }
   };
 
-  return(<div style={{animation:"slideUp .3s ease"}}>
+  return(<div style={{animation:"slideUp .3s ease",position:"relative",minHeight:"100%"}}>
     {/* Status bar */}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4,padding:"0 2px"}}>
       <div>
@@ -726,6 +732,9 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
 
     {/* Care action buttons */}
     {!sick&&<div style={{display:"flex",gap:4,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
+      {!sleeping&&!bathing&&<button className="btn btn-s" onClick={()=>setShowFridge(true)} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2}}>
+        <PxI n="fridge" size={12}/>먹이기
+      </button>}
       {dirty>=2&&!bathing&&<button className="btn btn-s" onClick={doBath} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2}}>
         <PxI n="bath" size={12}/>목욕
       </button>}
@@ -733,6 +742,37 @@ function HomeScreen({pet,hunger,happy,feedMsg,userName,inv,sick,onMedicine,petSt
       <button className="btn btn-s" onClick={onSleep} style={{padding:"4px 10px",fontSize:9,display:"inline-flex",alignItems:"center",gap:2,background:sleeping?"linear-gradient(135deg,#2a1848,#3a2868)":""}}>
         <PxI n="sleep" size={12}/>{sleeping?"깨우기":"재우기"}
       </button>
+    </div>}
+
+    {/* Fridge overlay */}
+    {showFridge&&<div style={{position:"absolute",inset:0,background:"rgba(244,236,255,.97)",borderRadius:12,zIndex:10,padding:10,overflowY:"auto",animation:"slideUp .2s ease",WebkitOverflowScrolling:"touch"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <span style={{fontSize:12,fontWeight:900,color:"#2b1d34",display:"flex",alignItems:"center",gap:4}}><PxI n="fridge" size={16}/>냉장고</span>
+        <button onClick={()=>setShowFridge(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#888",padding:4}}>✕</button>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:6,justifyContent:"center"}}>
+        <PxI n="hunger" size={11}/><StatBar val={hunger} max={5} color="#ff9a6c"/>
+        <div style={{width:6}}/>
+        <PxI n="happy" size={11}/><StatBar val={happy} max={5} color="#ff4d6d"/>
+      </div>
+      <div className="sec">밥</div>
+      {MEALS.map(f=>{const cnt=fridge[f.id];const free=f.p===0;return<div key={f.id} className="item" onClick={()=>{if(cnt>0){onFeed(f)}}} style={{opacity:cnt>0?1:0.3,marginBottom:2}}>
+        <FoodI t={f.id} size={20}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n} {free&&<span style={{fontSize:7,color:"#7ed4a8",fontWeight:800}}>무료</span>}</div>
+          <div style={{fontSize:7,color:"#aaa"}}>{f.h>0?`배부름+${f.h} `:""}{f.hp>0?`행복+${f.hp}`:""}</div>
+        </div>
+        <span style={{fontSize:10,fontWeight:700,color:cnt>0?"#2b1d34":"#ccc"}}>{cnt}개</span>
+      </div>})}
+      <div className="sec">간식</div>
+      {SNACKS.map(f=>{const cnt=fridge[f.id];return<div key={f.id} className="item" onClick={()=>{if(cnt>0){onFeed(f)}}} style={{opacity:cnt>0?1:0.3,marginBottom:2}}>
+        <FoodI t={f.id} size={20}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div>
+          <div style={{fontSize:7,color:"#aaa"}}>{f.h>0?`배부름+${f.h} `:""}{f.hp>0?`행복+${f.hp}`:""}</div>
+        </div>
+        <span style={{fontSize:10,fontWeight:700,color:cnt>0?"#2b1d34":"#ccc"}}>{cnt}개</span>
+      </div>})}
     </div>}
 
     {/* Mood text */}
@@ -853,7 +893,7 @@ function IntroScreen({onComplete,okRef,onLeft,onRight}){
 }
 
 /* ═══ MAIN APP ═══ */
-const SC={HOME:"h",MIX:"mx",MIXING:"mi",RESULT:"r",FEED:"f",GAMES:"g",GP:"gp",SHOP:"s",TREE:"t",SET:"set"};
+const SC={HOME:"h",MIX:"mx",MIXING:"mi",RESULT:"r",GAMES:"g",GP:"gp",SHOP:"s",TREE:"t",SET:"set"};
 
 /* ═══ SAVE / LOAD ═══ */
 const SAVE_KEY='mixingpets_save';
@@ -892,6 +932,7 @@ function App(){
   const[poop,setPoop]=useState(saved?.poop||0); // 0-3 poops on floor
   const[dirty,setDirty]=useState(saved?.dirty||0); // 0-5 dirtiness
   const[sleeping,setSleeping]=useState(saved?.sleeping||false);
+  const[fridge,setFridge]=useState(saved?.fridge||defaultFridge());
   const[confirmReset,setConfirmReset]=useState(false);
   const[menuIdx,setMenuIdx]=useState(0);
   const okRef=useRef(null);  // universal OK action ref
@@ -900,7 +941,6 @@ function App(){
 
   const TABS=[
     {id:SC.HOME,icon:"home",label:"홈"},
-    {id:SC.FEED,icon:"feed",label:"먹이기"},
     {id:SC.GAMES,icon:"game",label:"게임"},
     {id:SC.SHOP,icon:"shop",label:"상점"},
     {id:SC.MIX,icon:"mix",label:"소개팅"},
@@ -968,9 +1008,9 @@ function App(){
   },[]);
 
   // Auto-save
-  useEffect(()=>{if(!started||!pet)return;writeSave({userName,pet,coins,hunger,happy,inv,history,gen,fTree,sick,sickCount,dead,petStage,careScore,runaway,poop,dirty,sleeping})},[started,pet,userName,coins,hunger,happy,inv,history,gen,fTree,sick,sickCount,dead,petStage,careScore,runaway,poop,dirty,sleeping]);
+  useEffect(()=>{if(!started||!pet)return;writeSave({userName,pet,coins,hunger,happy,inv,history,gen,fTree,sick,sickCount,dead,petStage,careScore,runaway,poop,dirty,sleeping,fridge})},[started,pet,userName,coins,hunger,happy,inv,history,gen,fTree,sick,sickCount,dead,petStage,careScore,runaway,poop,dirty,sleeping,fridge]);
 
-  useEffect(()=>{if(!started||dead||runaway)return;const r=sick?1.5:1;const iv=setInterval(()=>{setHunger(h=>Math.max(0,h-.15*r));setHappy(h=>Math.max(0,h-.1*r));setCareScore(c=>{let n=c;if(hunger<=0)n-=2;if(happy<=0)n-=1;if(sick)n-=1;return Math.max(0,Math.min(100,n))})},3000);return()=>clearInterval(iv)},[started,dead,sick,runaway]);
+  useEffect(()=>{if(!started||dead||runaway)return;const r=sick?1.5:1;const iv=setInterval(()=>{setHunger(h=>Math.max(0,h-.08*r));setHappy(h=>Math.max(0,h-.05*r));setCareScore(c=>{let n=c;if(hunger<=0)n-=2;if(happy<=0)n-=1;if(sick)n-=1;return Math.max(0,Math.min(100,n))})},10000);return()=>clearInterval(iv)},[started,dead,sick,runaway]);
 
   // Sickness: triggers when hunger or happy at 0 for too long
   const sickTimerRef=useRef(null);
@@ -978,7 +1018,7 @@ function App(){
     if(!started||!pet||dead||sick)return;
     if(hunger<=0||happy<=0){
       if(!sickTimerRef.current){
-        sickTimerRef.current=setTimeout(()=>{setSick(true);SFX.sick();sickTimerRef.current=null},12000);
+        sickTimerRef.current=setTimeout(()=>{setSick(true);SFX.sick();sickTimerRef.current=null},30000);
       }
     }else{
       if(sickTimerRef.current){clearTimeout(sickTimerRef.current);sickTimerRef.current=null}
@@ -992,7 +1032,7 @@ function App(){
     if(!started||!pet||dead)return;
     if(sick){
       if(sickCount>=3){setDead(true);SFX.angel();return}
-      deathTimerRef.current=setTimeout(()=>{setDead(true);SFX.angel()},45000);
+      deathTimerRef.current=setTimeout(()=>{setDead(true);SFX.angel()},90000);
     }else{
       if(deathTimerRef.current){clearTimeout(deathTimerRef.current);deathTimerRef.current=null}
     }
@@ -1030,14 +1070,14 @@ function App(){
     return()=>clearTimeout(t);
   },[started,pet,dead,runaway,petStage,careScore]);
 
-  // Daily care: poop spawns every 25-40s, dirty increases every 45s
+  // Daily care: poop spawns every 60-120s, dirty increases every 90s
   useEffect(()=>{
     if(!started||dead||runaway||sleeping)return;
     const poopIv=setInterval(()=>{
-      if(Math.random()<0.4)setPoop(p=>Math.min(3,p+1));
+      if(Math.random()<0.35)setPoop(p=>Math.min(3,p+1));
       if(poop>0)SFX.poop();
-    },25000+Math.random()*15000);
-    const dirtyIv=setInterval(()=>setDirty(d=>Math.min(5,d+1)),45000);
+    },60000+Math.random()*60000);
+    const dirtyIv=setInterval(()=>setDirty(d=>Math.min(5,d+1)),90000);
     return()=>{clearInterval(poopIv);clearInterval(dirtyIv)};
   },[started,dead,runaway,sleeping]);
 
@@ -1045,10 +1085,10 @@ function App(){
   useEffect(()=>{
     if(!started||dead||runaway)return;
     const iv=setInterval(()=>{
-      if(poop>=2)setHappy(h=>Math.max(0,h-0.1));
-      if(dirty>=3)setHappy(h=>Math.max(0,h-0.05));
+      if(poop>=2)setHappy(h=>Math.max(0,h-0.05));
+      if(dirty>=3)setHappy(h=>Math.max(0,h-0.03));
       if(poop>=3)setCareScore(c=>Math.max(0,c-1));
-    },5000);
+    },15000);
     return()=>clearInterval(iv);
   },[started,dead,runaway,poop,dirty]);
 
@@ -1072,7 +1112,7 @@ function App(){
   // Sleep recovers hunger/happy slowly
   useEffect(()=>{
     if(!started||!sleeping||dead)return;
-    const iv=setInterval(()=>{setHunger(h=>Math.max(0,h-0.05));setHappy(h=>Math.min(5,h+0.08))},3000);
+    const iv=setInterval(()=>{setHunger(h=>Math.max(0,h-0.02));setHappy(h=>Math.min(5,h+0.06))},10000);
     return()=>clearInterval(iv);
   },[started,sleeping,dead]);
 
@@ -1082,12 +1122,12 @@ function App(){
     if(!started||!pet||dead||runaway||sick)return;
     if(hunger<=0&&happy<=0){
       if(!runawayTimerRef.current){
-        // Warn at 15s, runaway at 20s
-        setTimeout(()=>setRunawayWarn(true),15000);
+        // Warn at 40s, runaway at 60s
+        setTimeout(()=>setRunawayWarn(true),40000);
         runawayTimerRef.current=setTimeout(()=>{
           setRunaway(true);setRunawayWarn(false);SFX.runaway();
           runawayTimerRef.current=null;
-        },20000);
+        },60000);
       }
     }else{
       if(runawayTimerRef.current){clearTimeout(runawayTimerRef.current);runawayTimerRef.current=null;setRunawayWarn(false)}
@@ -1117,7 +1157,16 @@ function App(){
     setPoop(0);setDirty(0);setSleeping(false);
   },[]);
 
-  const feed=useCallback((f)=>{if(coins<f.p)return;SFX.feed();setCoins(c=>c-f.p);setHunger(h=>Math.min(5,h+f.h));setHappy(h=>Math.min(5,h+f.hp));setCareScore(c=>Math.min(100,c+3));setFeedMsg(f.n+" 맛있다!");setTimeout(()=>setFeedMsg(null),1200)},[coins]);
+  const feed=useCallback((f)=>{
+    if(fridge[f.id]<=0)return;SFX.feed();
+    setFridge(fr=>{const nf={...fr,[f.id]:fr[f.id]-1};if(f.id==="rice"&&nf.rice<=0)nf.rice=1;return nf});
+    setHunger(h=>Math.min(5,h+f.h));setHappy(h=>Math.min(5,h+f.hp));
+    setCareScore(c=>Math.min(100,c+3));setFeedMsg(f.n+" 맛있다!");setTimeout(()=>setFeedMsg(null),1200);
+  },[fridge]);
+  const buyFood=useCallback((f)=>{
+    if(coins<f.p||fridge[f.id]>=FRIDGE_MAX)return;SFX.buy();
+    setCoins(c=>c-f.p);setFridge(fr=>({...fr,[f.id]:Math.min(FRIDGE_MAX,fr[f.id]+1)}));
+  },[coins,fridge]);
   const buyAcc=useCallback((a)=>{if(inv.includes(a.id)||coins<a.p)return;SFX.buy();setCoins(c=>c-a.p);setInv(p=>[...p,a.id])},[coins,inv]);
   const onGE=useCallback(earned=>{SFX.buy();setCoins(c=>c+earned);setHappy(h=>Math.min(5,h+1));setCareScore(c=>Math.min(100,c+5));setScreen(SC.GAMES);setGt(null)},[]);
 
@@ -1161,7 +1210,7 @@ function App(){
     const other=chosen?(chosen===baby?baby2:baby):baby2;
     if(pick){setHistory(h=>[...h,pick,...(other?[other]:[])]);setPet(pick)}
     setBaby(null);setBaby2(null);setDatePartner(null);setDateStage(0);
-    setScreen(SC.HOME);setHunger(5);setHappy(5);setPetStage(0);setSick(false);setSickCount(0);setCareScore(50);setRunaway(false);setPoop(0);setDirty(0);setSleeping(false);
+    setScreen(SC.HOME);setHunger(5);setHappy(5);setPetStage(0);setSick(false);setSickCount(0);setCareScore(50);setRunaway(false);setPoop(0);setDirty(0);setSleeping(false);setFridge(defaultFridge());
   },[baby,baby2]);
 
   // Touch interactions
@@ -1278,12 +1327,8 @@ function App(){
               </div>}
 
               {started&&pet&&!dead&&!runaway&&<>
-                {screen===SC.HOME&&<HomeScreen pet={pet} hunger={hunger} happy={happy} feedMsg={feedMsg} userName={userName} inv={inv} sick={sick} onMedicine={giveMedicine} petStage={petStage} onPetTouch={handlePetTouch} onRoomTouch={handleRoomTouch} runawayWarn={runawayWarn} poop={poop} dirty={dirty} sleeping={sleeping} onClean={cleanPoop} onBath={giveBath} onSleep={toggleSleep}/>}
+                {screen===SC.HOME&&<HomeScreen pet={pet} hunger={hunger} happy={happy} feedMsg={feedMsg} userName={userName} inv={inv} sick={sick} onMedicine={giveMedicine} petStage={petStage} onPetTouch={handlePetTouch} onRoomTouch={handleRoomTouch} runawayWarn={runawayWarn} poop={poop} dirty={dirty} sleeping={sleeping} onClean={cleanPoop} onBath={giveBath} onSleep={toggleSleep} fridge={fridge} onFeed={feed}/>}
 
-                {screen===SC.FEED&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:5}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>먹이기</span></div>
-                  <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:7}}><PxChar ch={pet} size={46} idle/><div style={{display:"flex",flexDirection:"column",gap:2,justifyContent:"center"}}><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="hunger" size={11}/><StatBar val={hunger} max={5} color="#ff9a6c"/></div><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="happy" size={11}/><StatBar val={happy} max={5} color="#ff4d6d"/></div></div></div>
-                  {FOODS.map(f=><div key={f.id} className="item" onClick={()=>feed(f)} style={{opacity:(coins<f.p?0.3:1)}}><FoodI t={f.id} size={22}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div><div style={{fontSize:7,color:"#aaa"}}>{f.h>0?`배부름+${f.h} `:""}{f.hp>0?`행복+${f.hp}`:""}</div></div><div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{f.p}</span></div></div>)}
-                </div>}
 
                 {screen===SC.GAMES&&!gt&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>미니게임</span></div>
                   {[{t:"catch",n:"별 잡기",d:"떨어지는 별을 잡아요!",ic:"star",r:"별당 5코인"},{t:"memory",n:"카드 매칭",d:"같은 그림 짝을 맞춰요!",ic:"cards",r:"최대 30코인"},{t:"rps",n:"가위바위보",d:"5판 승부!",ic:"rps",r:"승리당 8코인"}].map(g=><div key={g.t} className="item" onClick={()=>{setGt(g.t);setScreen(SC.GP)}} style={{marginBottom:3}}><PxI n={g.ic} size={28}/><div style={{flex:1}}><div style={{fontSize:11,fontWeight:800,color:"#2b1d34"}}>{g.n}</div><div style={{fontSize:8,color:"#aaa"}}>{g.d}</div></div><span style={{fontSize:7,fontWeight:700,color:"#7ed4a8"}}>{g.r}</span></div>)}
@@ -1294,10 +1339,12 @@ function App(){
                 </div>}
 
                 {screen===SC.SHOP&&<div style={{animation:"slideUp .3s ease"}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Back to={SC.HOME}/><span style={{fontSize:12,fontWeight:900,color:"#2b1d34"}}>상점</span><div style={{flex:1}}/><div style={{display:"flex",alignItems:"center",gap:2}}><PxI n="coin" size={12}/><span style={{fontSize:10,fontWeight:700,color:"#d4a030"}}>{coins}</span></div></div>
+                  <div className="sec">밥</div>
+                  {MEALS.map(f=>{const full=fridge[f.id]>=FRIDGE_MAX;const free=f.p===0;return<div key={f.id} className="item" onClick={()=>buyFood(f)} style={{opacity:(full?0.35:(!free&&coins<f.p)?0.3:1),marginBottom:2}}><FoodI t={f.id} size={20}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n} {free&&<span style={{fontSize:7,color:"#7ed4a8",fontWeight:800}}>무료</span>}</div><div style={{fontSize:7,color:"#aaa"}}>{f.h>0?`배부름+${f.h} `:""}{f.hp>0?`행복+${f.hp}`:""}</div></div><div style={{fontSize:8,fontWeight:700,color:"#7ec8e3",marginRight:4}}>{fridge[f.id]}/{FRIDGE_MAX}</div>{!full&&!free&&<div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{f.p}</span></div>}{full&&<span style={{fontSize:8,fontWeight:700,color:"#ff4d6d"}}>가득!</span>}</div>})}
+                  <div className="sec">간식</div>
+                  {SNACKS.map(f=>{const full=fridge[f.id]>=FRIDGE_MAX;return<div key={f.id} className="item" onClick={()=>buyFood(f)} style={{opacity:(full?0.35:coins<f.p?0.3:1),marginBottom:2}}><FoodI t={f.id} size={20}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div><div style={{fontSize:7,color:"#aaa"}}>{f.h>0?`배부름+${f.h} `:""}{f.hp>0?`행복+${f.hp}`:""}</div></div><div style={{fontSize:8,fontWeight:700,color:"#7ec8e3",marginRight:4}}>{fridge[f.id]}/{FRIDGE_MAX}</div>{!full&&<div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{f.p}</span></div>}{full&&<span style={{fontSize:8,fontWeight:700,color:"#ff4d6d"}}>가득!</span>}</div>})}
                   <div className="sec">액세서리</div>
                   {ACCS.map(a=>{const ow=inv.includes(a.id);return<div key={a.id} className="item" onClick={()=>buyAcc(a)} style={{opacity:(ow?0.4:(coins<a.p?0.3:1))}}><RoomDeco type={a.deco}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{a.n}</div><div style={{fontSize:7,color:"#aaa"}}>{ow?"보유 중 · 방에 배치됨":a.desc}</div></div>{!ow&&<div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{a.p}</span></div>}{ow&&<span style={{fontSize:9,color:"#7ed4a8",fontWeight:800}}>✓</span>}</div>})}
-                  <div className="sec">음식</div>
-                  {FOODS.map(f=><div key={f.id} className="item" onClick={()=>feed(f)} style={{opacity:(coins<f.p?0.3:1)}}><FoodI t={f.id} size={20}/><div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:"#2b1d34"}}>{f.n}</div></div><div style={{display:"flex",alignItems:"center",gap:1}}><PxI n="coin" size={10}/><span style={{fontSize:9,fontWeight:700,color:"#d4a030"}}>{f.p}</span></div></div>)}
                 </div>}
 
                 {screen===SC.MIX&&<div style={{animation:"slideUp .3s ease"}}>
