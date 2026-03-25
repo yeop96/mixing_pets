@@ -319,10 +319,16 @@ const ACCS=[{id:"r",n:"리본",p:50,deco:"ribbon",desc:"벽에 거는 귀여운 
 
 /* ═══ MINI-GAMES (bugs fixed) ═══ */
 // Game area fills screen width (with padding). No scale transform.
-const useGameSize=(cols,padPx=24)=>{const[w,setW]=useState(240);useEffect(()=>{const el=document.querySelector('.scr-in');if(el)setW(el.clientWidth-padPx)},[]);return Math.min(30,Math.floor(w/cols))};
+const useGameSize=(cols,rows=0,extraH=80)=>{
+  const[sz,setSz]=useState({w:240,h:340});
+  useEffect(()=>{const el=document.querySelector('.scr-in');if(el)setSz({w:el.clientWidth-24,h:el.clientHeight})},[]);
+  const byW=Math.floor(sz.w/cols);
+  const byH=rows>0?Math.floor((sz.h-extraH)/rows):99;
+  return Math.min(byW,byH,34);
+};
 function StarGame({pet,onEnd,lRef,rRef,okRef}){
   const W=9,H=9;
-  const CS=useGameSize(W);
+  const CS=useGameSize(W,H,90);
   const[pos,setPos]=useState(4);
   const[stars,setStars]=useState([]);
   const[score,setScore]=useState(0);
@@ -491,7 +497,7 @@ function RPSGame({pet,onEnd}){
 
 /* ═══ 올라올라 (Zigzag Climb) ═══ */
 function ZigzagGame({pet,onEnd,okRef}){
-  const W=9;const CELL=useGameSize(W);
+  const W=9,H=10;const CELL=useGameSize(W,H,70);
   const[px,setPx]=useState(4);
   const[dir,setDir]=useState(1);
   const[row,setRow]=useState(0);
@@ -559,7 +565,7 @@ function ZigzagGame({pet,onEnd,okRef}){
       <button className="btn btn-m" onClick={()=>onEnd(coins)}>확인</button>
     </div>);
   }
-  const H=10;const walls=state.current.walls;
+  const walls=state.current.walls;
   return(<div style={{textAlign:"center"}}>
     <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,padding:"0 4px"}}>
       <span style={{fontSize:10,fontWeight:700,color:"#888"}}>{row}층</span>
@@ -590,7 +596,7 @@ function ZigzagGame({pet,onEnd,okRef}){
 
 /* ═══ 받아받아 (Catch & Dodge) ═══ */
 function CatchGame({pet,onEnd,lRef,rRef}){
-  const W=7,H=8;const CELL=useGameSize(W);
+  const W=7,H=8;const CELL=useGameSize(W,H,80);
   const[pos,setPos]=useState(3);
   const[items,setItems]=useState([]);
   const[score,setScore]=useState(0);
@@ -681,7 +687,9 @@ function CatchGame({pet,onEnd,lRef,rRef}){
 
 /* ═══ 피해피해 (Jump Runner) ═══ */
 function RunGame({pet,onEnd,okRef}){
-  const RW=useGameSize(1,20);const W=Math.min(280,RW),H=Math.round(W*0.75),GY=Math.round(H*0.79);
+  const[dims,setDims]=useState({w:260,h:200});
+  useEffect(()=>{const el=document.querySelector('.scr-in');if(el){const w=el.clientWidth-28;const h=Math.min(Math.round(w*0.7),el.clientHeight-70);setDims({w:Math.min(320,w),h:Math.max(140,h)})}},[]);
+  const W=dims.w,H=dims.h,GY=Math.round(H*0.79);
   const[score,setScore]=useState(0);
   const[act,setAct]=useState(true);
   const[py,setPy]=useState(GY);
@@ -752,7 +760,7 @@ function RunGame({pet,onEnd,okRef}){
 
 /* ═══ 쏘아쏘아 (Timing Shot) ═══ */
 function ShotGame({pet,onEnd,okRef}){
-  const W=7;const CELL=useGameSize(W);
+  const W=7;const CELL=useGameSize(W,6,100);
   const[arrow,setArrow]=useState(0);
   const[arrowDir,setArrowDir]=useState(1);
   const[target,setTarget]=useState(()=>Math.floor(Math.random()*W));
