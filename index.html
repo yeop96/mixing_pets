@@ -39,6 +39,7 @@ body{min-height:100vh;min-height:100dvh;background:linear-gradient(170deg,#1a102
 .device-faceplate::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='4' r='.5' fill='rgba(255,255,255,0.08)'/%3E%3C/svg%3E");pointer-events:none}
 .scr{background:linear-gradient(180deg,#f4ecff,#ecf6ff,#ecfff4);border-radius:12px;border:2px solid #3a2a4a;box-shadow:inset 0 2px 6px rgba(0,0,0,.06);overflow:hidden;width:100%;display:flex;flex-direction:column;height:min(380px,calc(100dvh - 310px))}
 .scr-in{padding:10px;flex:1;overflow-y:auto;position:relative;-webkit-overflow-scrolling:touch}
+.scr-in.no-scroll{overflow-y:hidden}
 .scr-in::-webkit-scrollbar{width:3px}.scr-in::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:3px}
 .btn{border:none;border-radius:40px;font-weight:800;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-tap-highlight-color:transparent}
 .btn:hover:not(:disabled){transform:scale(1.05)}.btn:active:not(:disabled){transform:scale(.97)}.btn:disabled{opacity:.3;cursor:not-allowed}
@@ -542,9 +543,12 @@ function ZigzagGame({pet,onEnd,okRef}){
     return()=>clearTimeout(tid);
   },[act,ready]);
 
-  const flip=()=>{if(state.current.act&&ready<=0){SFX.click();state.current.dir*=-1;setDir(d=>d*-1)}};
+  const readyRef=useRef(ready);readyRef.current=ready;
+  const flipRef=useRef(null);
+  const flip=()=>{if(state.current.act&&readyRef.current<=0){SFX.click();state.current.dir*=-1;setDir(d=>d*-1)}};
+  flipRef.current=flip;
 
-  useEffect(()=>{if(!act)return;if(okRef)okRef.current=flip;return()=>{if(okRef)okRef.current=null}},[act]);
+  useEffect(()=>{if(!act)return;if(okRef)okRef.current=()=>flipRef.current();return()=>{if(okRef)okRef.current=null}},[act]);
 
   if(!act){
     const sc=state.current.row;const coins=Math.min(50,Math.floor(sc/2));
@@ -682,7 +686,7 @@ function RunGame({pet,onEnd,okRef}){
   const[act,setAct]=useState(true);
   const[py,setPy]=useState(GY);
   const[obs,setObs]=useState([]);
-  const s=useRef({py:GY,vy:0,jumping:false,score:0,act:true,obs:[],tick:0,spawnCd:0});
+  const s=useRef({py:GY,vy:0,jumping:false,score:0,act:true,obs:[],tick:0,spawnCd:30});
 
   const jump=()=>{if(s.current.act&&!s.current.jumping){SFX.click();s.current.vy=-4.5;s.current.jumping=true}};
 
@@ -765,25 +769,12 @@ function ShotGame({pet,onEnd,okRef}){
   const scoreRef=useRef(0);
   const missRef=useRef(0);
 
-  arrowRef.current=arrow;dirRef.current=arrowDir;targetRef.current=target;actRef.current=act;
+  const flashRef=useRef(null);
+  arrowRef.current=arrow;dirRef.current=arrowDir;targetRef.current=target;actRef.current=act;flashRef.current=flash;
 
-  // Arrow sweep
-  useEffect(()=>{
-    if(!act)return;
-    const iv=setInterval(()=>{
-      if(!actRef.current)return;
-      const na=arrowRef.current+dirRef.current;
-      if(na>=W-1){setArrowDir(-1);dirRef.current=-1;setArrow(W-1)}
-      else if(na<=0){setArrowDir(1);dirRef.current=1;setArrow(0)}
-      else setArrow(na);
-    },spd);
-    return()=>clearInterval(iv);
-  },[act,spd]);
-
-  useEffect(()=>{if(!act)return;if(okRef)okRef.current=()=>shoot();return()=>{if(okRef)okRef.current=null}},[act,flash]);
-
+  const shootRef=useRef(null);
   const shoot=()=>{
-    if(!actRef.current||flash)return;
+    if(!actRef.current||flashRef.current)return;
     SFX.click();
     if(arrowRef.current===targetRef.current){
       // Hit!
@@ -806,6 +797,22 @@ function ShotGame({pet,onEnd,okRef}){
       },400);
     }
   };
+  shootRef.current=shoot;
+
+  // Arrow sweep
+  useEffect(()=>{
+    if(!act)return;
+    const iv=setInterval(()=>{
+      if(!actRef.current)return;
+      const na=arrowRef.current+dirRef.current;
+      if(na>=W-1){setArrowDir(-1);dirRef.current=-1;setArrow(W-1)}
+      else if(na<=0){setArrowDir(1);dirRef.current=1;setArrow(0)}
+      else setArrow(na);
+    },spd);
+    return()=>clearInterval(iv);
+  },[act,spd]);
+
+  useEffect(()=>{if(!act)return;if(okRef)okRef.current=()=>shootRef.current();return()=>{if(okRef)okRef.current=null}},[act]);
 
   if(!act){
     const coins=scoreRef.current*6;
@@ -1687,7 +1694,7 @@ function App(){
         <div className="device-faceplate">
           {/* Screen */}
           <div className="scr">
-            <div className="scr-in">
+            <div className={"scr-in"+(screen===SC.GP?" no-scroll":"")}>
               {!started&&<IntroScreen onComplete={({userName:u,pet:p})=>{setUserName(u);setPet(p);setStarted(true);setPetStage(0)}} okRef={okRef} onLeft={lRef} onRight={rRef}/>}
 
               {started&&pet&&dead&&<div style={{textAlign:"center",padding:"16px 10px",animation:"slideUp .5s ease"}}>
